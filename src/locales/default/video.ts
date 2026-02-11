@@ -5,4 +5,6 @@ export default {
   'config.generateAudio.label': 'Generate Audio',
   'config.imageUrl.label': 'Start Frame',
   'config.referenceImage.label': 'Reference Image',
+  'config.seed.label': 'Seed',
+  'config.seed.random': 'Random',
 } as const;

@@ -1,8 +1,10 @@
 'use client';
 
-import { Flexbox, Text } from '@lobehub/ui';
+import { Button, Flexbox, InputNumber, Text, Tooltip } from '@lobehub/ui';
 import { Switch } from 'antd';
-import { type ReactNode, memo, useMemo } from 'react';
+import { Dices } from 'lucide-react';
+import { MAX_VIDEO_SEED } from 'model-bank';
+import { type ReactNode, memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import AspectRatioSelect from '@/app/[variants]/(main)/image/_layout/ConfigPanel/components/AspectRatioSelect';
@@ -10,6 +12,7 @@ import { useFetchAiVideoConfig } from '@/hooks/useFetchAiVideoConfig';
 import { videoGenerationConfigSelectors } from '@/store/video/selectors';
 import { useVideoGenerationConfigParam } from '@/store/video/slices/generationConfig/hooks';
 import { useVideoStore } from '@/store/video/store';
+import { generateUniqueSeeds } from '@/utils/number';
 
 import VideoConfigSkeleton from './VideoConfigSkeleton';
 import FrameUpload from './components/FrameUpload';
@@ -39,6 +42,37 @@ const AspectRatioItem = memo(() => {
   return <AspectRatioSelect onChange={(v) => setValue(v as any)} options={options} value={value} />;
 });
 
+const SeedItem = memo(() => {
+  const { t } = useTranslation('video');
+  const { value, setValue } = useVideoGenerationConfigParam('seed');
+
+  const handleRandomize = useCallback(() => {
+    setValue(generateUniqueSeeds(1)[0] as any);
+  }, [setValue]);
+
+  return (
+    <Flexbox gap={4} horizontal>
+      <InputNumber
+        max={MAX_VIDEO_SEED}
+        min={0}
+        onChange={(v) => setValue(v as any)}
+        placeholder={t('config.seed.random')}
+        step={1}
+        style={{ width: '100%' }}
+        value={value}
+      />
+      <Tooltip title={t('config.seed.random')}>
+        <Button
+          icon={Dices}
+          onClick={handleRandomize}
+          style={{ flex: 'none', width: 48 }}
+          variant={'outlined'}
+        />
+      </Tooltip>
+    </Flexbox>
+  );
+});
+
 interface SwitchItemProps {
   label: string;
   paramName: 'cameraFixed' | 'generateAudio';
@@ -65,6 +99,7 @@ const ConfigPanel = memo(() => {
   const isSupportImageUrl = useVideoStore(isSupportedParamSelector('imageUrl'));
   const isSupportEndImageUrl = useVideoStore(isSupportedParamSelector('endImageUrl'));
   const isSupportAspectRatio = useVideoStore(isSupportedParamSelector('aspectRatio'));
+  const isSupportSeed = useVideoStore(isSupportedParamSelector('seed'));
   const isSupportGenerateAudio = useVideoStore(isSupportedParamSelector('generateAudio'));
   const isSupportCameraFixed = useVideoStore(isSupportedParamSelector('cameraFixed'));
 
@@ -98,6 +133,12 @@ const ConfigPanel = memo(() => {
       {isSupportAspectRatio && (
         <ConfigItemLayout label={t('config.aspectRatio.label')}>
           <AspectRatioItem />
+        </ConfigItemLayout>
+      )}
+
+      {isSupportSeed && (
+        <ConfigItemLayout label={t('config.seed.label')}>
+          <SeedItem />
         </ConfigItemLayout>
       )}
 
