@@ -1,5 +1,7 @@
 export default {
+  'config.cameraFixed.label': 'Fixed Camera',
   'config.endImageUrl.label': 'End Frame',
+  'config.generateAudio.label': 'Generate Audio',
   'config.imageUrl.label': 'Start Frame',
   'config.referenceImage.label': 'Reference Image',
 } as const;

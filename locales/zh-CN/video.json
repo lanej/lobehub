@@ -1,5 +1,7 @@
 {
+  "config.cameraFixed.label": "固定镜头",
   "config.endImageUrl.label": "结束帧",
+  "config.generateAudio.label": "生成音频",
   "config.imageUrl.label": "起始帧",
   "config.referenceImage.label": "参考图"
 }

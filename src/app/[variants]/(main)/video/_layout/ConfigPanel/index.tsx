@@ -1,11 +1,13 @@
 'use client';
 
 import { Flexbox, Text } from '@lobehub/ui';
+import { Switch } from 'antd';
 import { type ReactNode, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useFetchAiVideoConfig } from '@/hooks/useFetchAiVideoConfig';
 import { videoGenerationConfigSelectors } from '@/store/video/selectors';
+import { useVideoGenerationConfigParam } from '@/store/video/slices/generationConfig/hooks';
 import { useVideoStore } from '@/store/video/store';
 
 import VideoConfigSkeleton from './VideoConfigSkeleton';
@@ -28,6 +30,22 @@ const ConfigItemLayout = memo<ConfigItemLayoutProps>(({ label, children }) => {
 
 const isSupportedParamSelector = videoGenerationConfigSelectors.isSupportedParam;
 
+interface SwitchItemProps {
+  label: string;
+  paramName: 'cameraFixed' | 'generateAudio';
+}
+
+const SwitchItem = memo<SwitchItemProps>(({ label, paramName }) => {
+  const { value, setValue } = useVideoGenerationConfigParam(paramName);
+
+  return (
+    <Flexbox align="center" horizontal justify="space-between" padding={'0 2px'}>
+      <Text weight={500}>{label}</Text>
+      <Switch checked={!!value} onChange={(checked) => setValue(checked as any)} />
+    </Flexbox>
+  );
+});
+
 const ConfigPanel = memo(() => {
   const { t } = useTranslation('video');
 
@@ -37,6 +55,8 @@ const ConfigPanel = memo(() => {
   const isInit = useVideoStore((s) => s.isInit);
   const isSupportImageUrl = useVideoStore(isSupportedParamSelector('imageUrl'));
   const isSupportEndImageUrl = useVideoStore(isSupportedParamSelector('endImageUrl'));
+  const isSupportGenerateAudio = useVideoStore(isSupportedParamSelector('generateAudio'));
+  const isSupportCameraFixed = useVideoStore(isSupportedParamSelector('cameraFixed'));
 
   // Show loading state if not initialized
   if (!isInit) {
@@ -63,6 +83,13 @@ const ConfigPanel = memo(() => {
         <ConfigItemLayout label={t('config.endImageUrl.label')}>
           <FrameUpload paramName="endImageUrl" />
         </ConfigItemLayout>
+      )}
+
+      {isSupportGenerateAudio && (
+        <SwitchItem label={t('config.generateAudio.label')} paramName="generateAudio" />
+      )}
+      {isSupportCameraFixed && (
+        <SwitchItem label={t('config.cameraFixed.label')} paramName="cameraFixed" />
       )}
     </Flexbox>
   );
