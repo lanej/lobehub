@@ -2,9 +2,10 @@
 
 import { Flexbox, Text } from '@lobehub/ui';
 import { Switch } from 'antd';
-import { type ReactNode, memo } from 'react';
+import { type ReactNode, memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import AspectRatioSelect from '@/app/[variants]/(main)/image/_layout/ConfigPanel/components/AspectRatioSelect';
 import { useFetchAiVideoConfig } from '@/hooks/useFetchAiVideoConfig';
 import { videoGenerationConfigSelectors } from '@/store/video/selectors';
 import { useVideoGenerationConfigParam } from '@/store/video/slices/generationConfig/hooks';
@@ -29,6 +30,14 @@ const ConfigItemLayout = memo<ConfigItemLayoutProps>(({ label, children }) => {
 });
 
 const isSupportedParamSelector = videoGenerationConfigSelectors.isSupportedParam;
+
+const AspectRatioItem = memo(() => {
+  const { value, setValue, enumValues } = useVideoGenerationConfigParam('aspectRatio');
+
+  const options = useMemo(() => (enumValues ?? []).map((v) => ({ value: v })), [enumValues]);
+
+  return <AspectRatioSelect onChange={(v) => setValue(v as any)} options={options} value={value} />;
+});
 
 interface SwitchItemProps {
   label: string;
@@ -55,6 +64,7 @@ const ConfigPanel = memo(() => {
   const isInit = useVideoStore((s) => s.isInit);
   const isSupportImageUrl = useVideoStore(isSupportedParamSelector('imageUrl'));
   const isSupportEndImageUrl = useVideoStore(isSupportedParamSelector('endImageUrl'));
+  const isSupportAspectRatio = useVideoStore(isSupportedParamSelector('aspectRatio'));
   const isSupportGenerateAudio = useVideoStore(isSupportedParamSelector('generateAudio'));
   const isSupportCameraFixed = useVideoStore(isSupportedParamSelector('cameraFixed'));
 
@@ -82,6 +92,12 @@ const ConfigPanel = memo(() => {
       {isSupportEndImageUrl && (
         <ConfigItemLayout label={t('config.endImageUrl.label')}>
           <FrameUpload paramName="endImageUrl" />
+        </ConfigItemLayout>
+      )}
+
+      {isSupportAspectRatio && (
+        <ConfigItemLayout label={t('config.aspectRatio.label')}>
+          <AspectRatioItem />
         </ConfigItemLayout>
       )}
 

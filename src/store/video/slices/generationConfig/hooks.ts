@@ -22,12 +22,12 @@ export function useVideoGenerationConfigParam<
 
   const paramConfig = parametersSchema?.[paramName];
   const paramConstraints = useMemo(() => {
-    const maxFileSize =
-      paramConfig && typeof paramConfig === 'object' && 'maxFileSize' in paramConfig
-        ? paramConfig.maxFileSize
-        : undefined;
+    if (!paramConfig || typeof paramConfig !== 'object') return {};
 
-    return { maxFileSize };
+    const maxFileSize = 'maxFileSize' in paramConfig ? paramConfig.maxFileSize : undefined;
+    const enumValues = 'enum' in paramConfig ? (paramConfig.enum as string[]) : undefined;
+
+    return { enumValues, maxFileSize };
   }, [paramConfig]);
 
   return {

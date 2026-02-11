@@ -1,4 +1,5 @@
 export default {
+  'config.aspectRatio.label': 'Aspect Ratio',
   'config.cameraFixed.label': 'Fixed Camera',
   'config.endImageUrl.label': 'End Frame',
   'config.generateAudio.label': 'Generate Audio',

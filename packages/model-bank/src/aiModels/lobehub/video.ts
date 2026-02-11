@@ -7,8 +7,8 @@ import { AIVideoModelCard } from '../../types/aiModel';
 
 export const seedance15ProParams: VideoModelParamsSchema = {
   aspectRatio: {
-    default: '16:9',
-    enum: PRESET_VIDEO_ASPECT_RATIOS,
+    default: 'adaptive',
+    enum: ['adaptive', ...PRESET_VIDEO_ASPECT_RATIOS],
   },
   cameraFixed: { default: false },
   duration: { default: 5, max: 12, min: 4 },

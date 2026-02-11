@@ -1,4 +1,5 @@
 {
+  "config.aspectRatio.label": "画面比例",
   "config.cameraFixed.label": "固定镜头",
   "config.endImageUrl.label": "结束帧",
   "config.generateAudio.label": "生成音频",
