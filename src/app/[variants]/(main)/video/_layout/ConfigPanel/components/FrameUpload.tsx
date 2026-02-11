@@ -17,7 +17,14 @@ const FrameUpload = memo<FrameUploadProps>(({ paramName }) => {
     setValue((url ?? null) as any);
   };
 
-  return <ImageUpload maxFileSize={maxFileSize} onChange={handleChange} value={value} />;
+  return (
+    <ImageUpload
+      maxFileSize={maxFileSize}
+      onChange={handleChange}
+      placeholderHeight={120}
+      value={value}
+    />
+  );
 });
 
 export default FrameUpload;
