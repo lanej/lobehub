@@ -1,6 +1,14 @@
 'use client';
 
-import { Button, Flexbox, InputNumber, Text, Tooltip } from '@lobehub/ui';
+import {
+  Button,
+  Flexbox,
+  InputNumber,
+  Segmented,
+  SliderWithInput,
+  Text,
+  Tooltip,
+} from '@lobehub/ui';
 import { Switch } from 'antd';
 import { Dices } from 'lucide-react';
 import { MAX_VIDEO_SEED } from 'model-bank';
@@ -40,6 +48,42 @@ const AspectRatioItem = memo(() => {
   const options = useMemo(() => (enumValues ?? []).map((v) => ({ value: v })), [enumValues]);
 
   return <AspectRatioSelect onChange={(v) => setValue(v as any)} options={options} value={value} />;
+});
+
+const ResolutionItem = memo(() => {
+  const { value, setValue, enumValues } = useVideoGenerationConfigParam('resolution');
+
+  const options = useMemo(() => {
+    if (!enumValues || enumValues.length === 0) return [];
+    return enumValues.map((v) => ({ label: v, value: v }));
+  }, [enumValues]);
+
+  if (options.length === 0) return null;
+
+  return (
+    <Segmented
+      block
+      onChange={(v) => setValue(String(v) as any)}
+      options={options}
+      style={{ width: '100%' }}
+      value={value}
+      variant="filled"
+    />
+  );
+});
+
+const DurationItem = memo(() => {
+  const { value, setValue, min, max, step } = useVideoGenerationConfigParam('duration');
+
+  return (
+    <SliderWithInput
+      max={max}
+      min={min}
+      onChange={(v) => setValue(v as any)}
+      step={step ?? 1}
+      value={value ?? min}
+    />
+  );
 });
 
 const SeedItem = memo(() => {
@@ -99,6 +143,8 @@ const ConfigPanel = memo(() => {
   const isSupportImageUrl = useVideoStore(isSupportedParamSelector('imageUrl'));
   const isSupportEndImageUrl = useVideoStore(isSupportedParamSelector('endImageUrl'));
   const isSupportAspectRatio = useVideoStore(isSupportedParamSelector('aspectRatio'));
+  const isSupportResolution = useVideoStore(isSupportedParamSelector('resolution'));
+  const isSupportDuration = useVideoStore(isSupportedParamSelector('duration'));
   const isSupportSeed = useVideoStore(isSupportedParamSelector('seed'));
   const isSupportGenerateAudio = useVideoStore(isSupportedParamSelector('generateAudio'));
   const isSupportCameraFixed = useVideoStore(isSupportedParamSelector('cameraFixed'));
@@ -133,6 +179,18 @@ const ConfigPanel = memo(() => {
       {isSupportAspectRatio && (
         <ConfigItemLayout label={t('config.aspectRatio.label')}>
           <AspectRatioItem />
+        </ConfigItemLayout>
+      )}
+
+      {isSupportResolution && (
+        <ConfigItemLayout label={t('config.resolution.label')}>
+          <ResolutionItem />
+        </ConfigItemLayout>
+      )}
+
+      {isSupportDuration && (
+        <ConfigItemLayout label={t('config.duration.label')}>
+          <DurationItem />
         </ConfigItemLayout>
       )}
 
