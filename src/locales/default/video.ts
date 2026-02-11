@@ -1,0 +1,5 @@
+export default {
+  'config.endImageUrl.label': 'End Frame',
+  'config.imageUrl.label': 'Start Frame',
+  'config.referenceImage.label': 'Reference Image',
+} as const;

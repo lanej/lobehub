@@ -5,7 +5,7 @@ import { lobehubVideoModels } from './video';
 export { lobehubChatModels } from './chat';
 export { lobehubImageModels } from './image';
 export * from './utils';
-export { lobehubVideoModels } from './video';
+export { lobehubVideoModels, seedance15ProParams } from './video';
 
 export const allModels = [...lobehubChatModels, ...lobehubImageModels, ...lobehubVideoModels];
 

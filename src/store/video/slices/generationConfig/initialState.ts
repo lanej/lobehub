@@ -1,17 +1,14 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix, typescript-sort-keys/interface */
 import {
-  type VideoModelParamsSchema,
   ModelProvider,
   type RuntimeVideoGenParams,
+  type VideoModelParamsSchema,
   extractVideoDefaultValues,
 } from 'model-bank';
+import { seedance15ProParams } from 'model-bank/lobehub';
 
 export const DEFAULT_AI_VIDEO_PROVIDER = ModelProvider.LobeHub;
 export const DEFAULT_AI_VIDEO_MODEL = 'doubao-seedance-1-5-pro-251215';
-
-const DEFAULT_VIDEO_PARAMS_SCHEMA: VideoModelParamsSchema = {
-  prompt: { default: '' },
-};
 
 export interface VideoGenerationConfigState {
   parameters: RuntimeVideoGenParams;
@@ -27,12 +24,12 @@ export interface VideoGenerationConfigState {
 }
 
 export const DEFAULT_VIDEO_GENERATION_PARAMETERS: RuntimeVideoGenParams =
-  extractVideoDefaultValues(DEFAULT_VIDEO_PARAMS_SCHEMA);
+  extractVideoDefaultValues(seedance15ProParams);
 
 export const initialGenerationConfigState: VideoGenerationConfigState = {
   model: DEFAULT_AI_VIDEO_MODEL,
   provider: DEFAULT_AI_VIDEO_PROVIDER,
   parameters: DEFAULT_VIDEO_GENERATION_PARAMETERS,
-  parametersSchema: DEFAULT_VIDEO_PARAMS_SCHEMA,
+  parametersSchema: seedance15ProParams,
   isInit: false,
 };

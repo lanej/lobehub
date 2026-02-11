@@ -5,7 +5,7 @@ import {
 } from '../../standard-parameters/video';
 import { AIVideoModelCard } from '../../types/aiModel';
 
-const seedance15ProParams: VideoModelParamsSchema = {
+export const seedance15ProParams: VideoModelParamsSchema = {
   aspectRatio: {
     default: '16:9',
     enum: PRESET_VIDEO_ASPECT_RATIOS,
