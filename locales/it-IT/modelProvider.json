@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "Chat in tempo reale",
   "providerModels.item.modelConfig.type.options.stt": "Da voce a testo",
   "providerModels.item.modelConfig.type.options.text2music": "Testo in musica",
-  "providerModels.item.modelConfig.type.options.text2video": "Testo in video",
+  "providerModels.item.modelConfig.type.options.video": "Testo in video",
   "providerModels.item.modelConfig.type.options.tts": "Da testo a voce",
   "providerModels.item.modelConfig.type.placeholder": "Seleziona un tipo di modello",
   "providerModels.item.modelConfig.type.title": "Tipo di modello",

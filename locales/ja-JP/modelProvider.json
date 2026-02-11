@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "リアルタイムチャット",
   "providerModels.item.modelConfig.type.options.stt": "音声からテキストへ",
   "providerModels.item.modelConfig.type.options.text2music": "テキストから音楽へ",
-  "providerModels.item.modelConfig.type.options.text2video": "テキストから動画へ",
+  "providerModels.item.modelConfig.type.options.video": "テキストから動画へ",
   "providerModels.item.modelConfig.type.options.tts": "音声合成",
   "providerModels.item.modelConfig.type.placeholder": "モデルタイプを選択してください",
   "providerModels.item.modelConfig.type.title": "モデルタイプ",

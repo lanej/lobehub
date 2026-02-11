@@ -36,7 +36,7 @@ const ModelConfigForm = memo<ModelConfigFormProps>(
             'tts',
             'stt',
             'image',
-            // 'text2video',
+            // 'video',
             // 'text2music',
             'realtime',
           ] as AiModelType[]

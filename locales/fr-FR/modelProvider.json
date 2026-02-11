@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "Chat en temps réel",
   "providerModels.item.modelConfig.type.options.stt": "Reconnaissance vocale",
   "providerModels.item.modelConfig.type.options.text2music": "Texte en musique",
-  "providerModels.item.modelConfig.type.options.text2video": "Texte en vidéo",
+  "providerModels.item.modelConfig.type.options.video": "Texte en vidéo",
   "providerModels.item.modelConfig.type.options.tts": "Synthèse vocale",
   "providerModels.item.modelConfig.type.placeholder": "Veuillez sélectionner un type de modèle",
   "providerModels.item.modelConfig.type.title": "Type de modèle",

@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "دردشة فورية",
   "providerModels.item.modelConfig.type.options.stt": "تحويل الكلام إلى نص",
   "providerModels.item.modelConfig.type.options.text2music": "نص إلى موسيقى",
-  "providerModels.item.modelConfig.type.options.text2video": "نص إلى فيديو",
+  "providerModels.item.modelConfig.type.options.video": "نص إلى فيديو",
   "providerModels.item.modelConfig.type.options.tts": "تحويل النص إلى كلام",
   "providerModels.item.modelConfig.type.placeholder": "يرجى اختيار نوع النموذج",
   "providerModels.item.modelConfig.type.title": "نوع النموذج",

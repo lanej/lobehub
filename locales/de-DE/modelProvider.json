@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "Echtzeit-Chat",
   "providerModels.item.modelConfig.type.options.stt": "Sprache-zu-Text",
   "providerModels.item.modelConfig.type.options.text2music": "Text-zu-Musik",
-  "providerModels.item.modelConfig.type.options.text2video": "Text-zu-Video",
+  "providerModels.item.modelConfig.type.options.video": "Text-zu-Video",
   "providerModels.item.modelConfig.type.options.tts": "Text-zu-Sprache",
   "providerModels.item.modelConfig.type.placeholder": "Bitte wählen Sie einen Modelltyp",
   "providerModels.item.modelConfig.type.title": "Modelltyp",

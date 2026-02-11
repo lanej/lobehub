@@ -36,6 +36,6 @@ export const lobehubVideoModels: AIVideoModelCard[] = [
       units: [{ name: 'videoGeneration', rate: 0, strategy: 'fixed', unit: 'second' }],
     },
     releasedAt: '2025-12-15',
-    type: 'text2video',
+    type: 'video',
   },
 ];

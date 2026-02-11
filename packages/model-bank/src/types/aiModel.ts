@@ -18,7 +18,7 @@ export const AiModelTypeSchema = z.enum([
   'tts',
   'stt',
   'image',
-  'text2video',
+  'video',
   'text2music',
   'realtime',
 ] as const);
@@ -318,7 +318,7 @@ export interface AIImageModelCard extends AIBaseModelCard {
 export interface AIVideoModelCard extends AIBaseModelCard {
   parameters?: VideoModelParamsSchema;
   pricing?: Pricing;
-  type: 'text2video';
+  type: 'video';
 }
 
 export interface AITTSModelCard extends AIBaseModelCard {

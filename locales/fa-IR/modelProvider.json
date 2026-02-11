@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "گفت‌وگوی بلادرنگ",
   "providerModels.item.modelConfig.type.options.stt": "تبدیل گفتار به متن",
   "providerModels.item.modelConfig.type.options.text2music": "تبدیل متن به موسیقی",
-  "providerModels.item.modelConfig.type.options.text2video": "تبدیل متن به ویدیو",
+  "providerModels.item.modelConfig.type.options.video": "تبدیل متن به ویدیو",
   "providerModels.item.modelConfig.type.options.tts": "تبدیل متن به گفتار",
   "providerModels.item.modelConfig.type.placeholder": "نوع مدل را انتخاب کنید",
   "providerModels.item.modelConfig.type.title": "نوع مدل",

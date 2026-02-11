@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "Trò chuyện thời gian thực",
   "providerModels.item.modelConfig.type.options.stt": "Chuyển giọng nói thành văn bản",
   "providerModels.item.modelConfig.type.options.text2music": "Văn bản thành nhạc",
-  "providerModels.item.modelConfig.type.options.text2video": "Văn bản thành video",
+  "providerModels.item.modelConfig.type.options.video": "Văn bản thành video",
   "providerModels.item.modelConfig.type.options.tts": "Chuyển văn bản thành giọng nói",
   "providerModels.item.modelConfig.type.placeholder": "Vui lòng chọn loại mô hình",
   "providerModels.item.modelConfig.type.title": "Loại mô hình",

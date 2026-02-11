@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "Чат в реальном времени",
   "providerModels.item.modelConfig.type.options.stt": "Речь в текст",
   "providerModels.item.modelConfig.type.options.text2music": "Текст в музыку",
-  "providerModels.item.modelConfig.type.options.text2video": "Текст в видео",
+  "providerModels.item.modelConfig.type.options.video": "Текст в видео",
   "providerModels.item.modelConfig.type.options.tts": "Текст в речь",
   "providerModels.item.modelConfig.type.placeholder": "Выберите тип модели",
   "providerModels.item.modelConfig.type.title": "Тип модели",

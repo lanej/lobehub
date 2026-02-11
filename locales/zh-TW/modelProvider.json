@@ -260,7 +260,7 @@
   "providerModels.item.modelConfig.type.options.realtime": "即時對話",
   "providerModels.item.modelConfig.type.options.stt": "語音轉文字",
   "providerModels.item.modelConfig.type.options.text2music": "文本轉音樂",
-  "providerModels.item.modelConfig.type.options.text2video": "文本轉影片",
+  "providerModels.item.modelConfig.type.options.video": "文本轉影片",
   "providerModels.item.modelConfig.type.options.tts": "語音合成",
   "providerModels.item.modelConfig.type.placeholder": "請選擇模型類型",
   "providerModels.item.modelConfig.type.title": "模型類型",
