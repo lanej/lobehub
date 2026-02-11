@@ -80,7 +80,6 @@ describe('Agent Eval Router Integration Tests', () => {
               criteria: { min: 0, max: 1 },
             },
           ],
-          passThreshold: 0.7,
           referenceUrl: 'https://example.com',
           metadata: { version: 1 },
           isSystem: false,
@@ -90,7 +89,6 @@ describe('Agent Eval Router Integration Tests', () => {
         expect(result.id).toBeDefined();
         expect(result.identifier).toBe('test-benchmark');
         expect(result.name).toBe('Test Benchmark');
-        expect(result.passThreshold).toBe(0.7);
 
         // Verify in database
         const benchmark = await serverDB.query.agentEvalBenchmarks.findFirst({
@@ -106,7 +104,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'duplicate-test',
           name: 'First',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         });
 
@@ -115,7 +113,7 @@ describe('Agent Eval Router Integration Tests', () => {
             identifier: 'duplicate-test',
             name: 'Second',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: false,
           }),
         ).rejects.toThrow(/already exists/);
@@ -131,14 +129,14 @@ describe('Agent Eval Router Integration Tests', () => {
             identifier: 'system-1',
             name: 'System 1',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: true,
           },
           {
             identifier: 'user-1',
             name: 'User 1',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: false,
           },
         ]);
@@ -158,14 +156,14 @@ describe('Agent Eval Router Integration Tests', () => {
             identifier: 'system-1',
             name: 'System 1',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: true,
           },
           {
             identifier: 'user-1',
             name: 'User 1',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: false,
           },
         ]);
@@ -185,7 +183,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'get-test',
           name: 'Get Test',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         });
 
@@ -210,7 +208,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'update-test',
           name: 'Original',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         });
 
@@ -218,12 +216,10 @@ describe('Agent Eval Router Integration Tests', () => {
           id: created.id,
           name: 'Updated',
           description: 'New description',
-          passThreshold: 0.8,
         });
 
         expect(result.name).toBe('Updated');
         expect(result.description).toBe('New description');
-        expect(result.passThreshold).toBe(0.8);
       });
 
       it('should throw NOT_FOUND when updating non-existent benchmark', async () => {
@@ -246,7 +242,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'delete-test',
           name: 'Delete Test',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         });
 
@@ -270,7 +266,7 @@ describe('Agent Eval Router Integration Tests', () => {
             identifier: 'system-benchmark',
             name: 'System',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: true,
           })
           .returning();
@@ -296,7 +292,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'test-benchmark',
           name: 'Test Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -367,7 +363,7 @@ describe('Agent Eval Router Integration Tests', () => {
             identifier: 'benchmark-2',
             name: 'Benchmark 2',
             rubrics: [],
-            passThreshold: 0.6,
+  
             isSystem: false,
           })
           .returning();
@@ -520,7 +516,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'test-benchmark',
           name: 'Test Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -755,7 +751,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'test-benchmark',
           name: 'Test Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -785,7 +781,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'test-benchmark',
           name: 'Test Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -823,7 +819,7 @@ describe('Agent Eval Router Integration Tests', () => {
           identifier: 'test-benchmark',
           name: 'Test Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();

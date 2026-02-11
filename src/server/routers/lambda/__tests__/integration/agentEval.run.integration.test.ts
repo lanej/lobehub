@@ -40,7 +40,7 @@ describe('AgentEval Run Workflow Integration', () => {
         identifier: 'test-benchmark',
         name: 'Test Benchmark',
         rubrics: [],
-        passThreshold: 0.6,
+
         isSystem: false,
       });
 
@@ -96,7 +96,7 @@ describe('AgentEval Run Workflow Integration', () => {
         identifier: 'test-benchmark-2',
         name: 'Test Benchmark 2',
         rubrics: [],
-        passThreshold: 0.6,
+
         isSystem: false,
       });
 
@@ -139,7 +139,7 @@ describe('AgentEval Run Workflow Integration', () => {
         identifier: 'query-test-benchmark',
         name: 'Query Test Benchmark',
         rubrics: [],
-        passThreshold: 0.6,
+
         isSystem: false,
       });
 

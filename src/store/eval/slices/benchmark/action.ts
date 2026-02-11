@@ -13,7 +13,6 @@ export interface BenchmarkAction {
     identifier: string;
     metadata?: Record<string, unknown>;
     name: string;
-    passThreshold?: number;
     rubrics?: any[];
   }) => Promise<any>;
   deleteBenchmark: (id: string) => Promise<void>;
@@ -35,7 +34,6 @@ export const createBenchmarkSlice: StateCreator<
         name: params.name,
         description: params.description,
         metadata: params.metadata,
-        passThreshold: params.passThreshold ?? 0.6,
         rubrics: params.rubrics ?? [],
       });
       await get().refreshBenchmarks();

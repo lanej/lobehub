@@ -34,7 +34,7 @@ beforeEach(async () => {
       identifier: 'test-benchmark',
       name: 'Test Benchmark',
       rubrics: [],
-      passThreshold: 0.6,
+
       isSystem: false,
     })
     .returning();
@@ -141,7 +141,7 @@ describe('AgentEvalDatasetModel', () => {
           identifier: 'benchmark-2',
           name: 'Benchmark 2',
           rubrics: [],
-          passThreshold: 0.6,
+    
           isSystem: false,
         })
         .returning();

@@ -35,7 +35,6 @@ describe('AgentEvalBenchmarkModel', () => {
             threshold: 0.7,
           },
         ],
-        passThreshold: 0.7,
         referenceUrl: 'https://example.com',
         metadata: { version: 1 },
         isSystem: false,
@@ -48,7 +47,6 @@ describe('AgentEvalBenchmarkModel', () => {
       expect(result.name).toBe('Test Benchmark');
       expect(result.description).toBe('Test description');
       expect(result.rubrics).toEqual(params.rubrics);
-      expect(result.passThreshold).toBe(0.7);
       expect(result.referenceUrl).toBe('https://example.com');
       expect(result.metadata).toEqual({ version: 1 });
       expect(result.isSystem).toBe(false);
@@ -61,7 +59,6 @@ describe('AgentEvalBenchmarkModel', () => {
         identifier: 'system-benchmark',
         name: 'System Benchmark',
         rubrics: [],
-        passThreshold: 0.6,
         isSystem: true,
       };
 
@@ -80,7 +77,7 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'delete-test',
           name: 'Delete Test',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -100,7 +97,7 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'system-benchmark',
           name: 'System Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: true,
         })
         .returning();
@@ -126,21 +123,21 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'system-1',
           name: 'System 1',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: true,
         },
         {
           identifier: 'user-1',
           name: 'User 1',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         },
         {
           identifier: 'system-2',
           name: 'System 2',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: true,
         },
       ]);
@@ -186,7 +183,7 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'find-test',
           name: 'Find Test',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -210,7 +207,6 @@ describe('AgentEvalBenchmarkModel', () => {
         identifier: 'unique-identifier',
         name: 'Unique Test',
         rubrics: [],
-        passThreshold: 0.6,
         isSystem: false,
       });
 
@@ -235,7 +231,7 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'update-test',
           name: 'Original Name',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -243,13 +239,11 @@ describe('AgentEvalBenchmarkModel', () => {
       const result = await benchmarkModel.update(benchmark.id, {
         name: 'Updated Name',
         description: 'New description',
-        passThreshold: 0.8,
       });
 
       expect(result).toBeDefined();
       expect(result?.name).toBe('Updated Name');
       expect(result?.description).toBe('New description');
-      expect(result?.passThreshold).toBe(0.8);
       expect(result?.updatedAt).toBeDefined();
       expect(result?.updatedAt.getTime()).toBeGreaterThanOrEqual(result!.createdAt.getTime());
     });
@@ -261,7 +255,7 @@ describe('AgentEvalBenchmarkModel', () => {
           identifier: 'system-benchmark',
           name: 'System Benchmark',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: true,
         })
         .returning();
@@ -292,7 +286,7 @@ describe('AgentEvalBenchmarkModel', () => {
           name: 'Original',
           description: 'Original Desc',
           rubrics: [],
-          passThreshold: 0.6,
+
           isSystem: false,
         })
         .returning();
@@ -303,7 +297,6 @@ describe('AgentEvalBenchmarkModel', () => {
 
       expect(result?.name).toBe('Only Name Changed');
       expect(result?.description).toBe('Original Desc');
-      expect(result?.passThreshold).toBe(0.6);
     });
   });
 });

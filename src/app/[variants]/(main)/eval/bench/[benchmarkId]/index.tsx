@@ -11,8 +11,10 @@ import {
   CheckCircle2,
   Database,
   Download,
+  FlaskConical,
   Gauge,
   LoaderPinwheel,
+  Plus,
   Server,
   Target,
   Trash2,
@@ -22,16 +24,16 @@ import {
   Volleyball,
   Zap,
 } from 'lucide-react';
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import { useEvalStore } from '@/store/eval';
 
-import RunCreateModal from './features/RunCreateModal';
+import DatasetImportModal from '../../features/DatasetImportModal';
+import DatasetsTab from './features/DatasetsTab';
 import RunsTab from './features/RunsTab';
-import TestCasesTab from './features/TestCasesTab';
 
 const SYSTEM_ICONS = [
   LoaderPinwheel,
@@ -85,6 +87,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
   `,
   tabButton: css`
     position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px 16px;
 
     font-size: 14px;
@@ -92,24 +97,13 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
     background: transparent;
     border: none;
+    border-bottom: 2px solid transparent;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
 
     &[data-active='true'] {
       color: ${cssVar.colorText};
-
-      &::after {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        left: 0;
-
-        height: 2px;
-
-        background: ${cssVar.colorPrimary};
-
-        content: '';
-      }
+      border-bottom-color: ${cssVar.colorPrimary};
     }
 
     &[data-active='false'] {
@@ -120,10 +114,14 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
       }
     }
   `,
+  tabBadge: css`
+    padding: 2px 6px;
+    font-size: 10px;
+    border-radius: 10px;
+  `,
   tabsContainer: css`
     display: flex;
-    align-items: center;
-
+    gap: 4px;
     border-bottom: 1px solid ${cssVar.colorBorderSecondary};
   `,
   title: css`
@@ -139,9 +137,8 @@ const BenchmarkDetail = memo(() => {
   const { benchmarkId } = useParams<{ benchmarkId: string }>();
   const [benchmark, setBenchmark] = useState<any>(null);
   const [datasets, setDatasets] = useState<any[]>([]);
-  const [activeDatasetId, setActiveDatasetId] = useState<string>();
-  const [activeTab, setActiveTab] = useState<'runs' | 'data'>('runs');
-  const [createRunOpen, setCreateRunOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'datasets' | 'runs'>('datasets');
+  const [importOpen, setImportOpen] = useState(false);
   const deleteBenchmark = useEvalStore((s) => s.deleteBenchmark);
 
   const systemIcon = useMemo(
@@ -149,18 +146,23 @@ const BenchmarkDetail = memo(() => {
     [benchmarkId],
   );
 
-  useEffect(() => {
+  const refreshDatasets = useCallback(() => {
     if (!benchmarkId) return;
-    lambdaClient.agentEval.getBenchmark.query({ id: benchmarkId }).then(setBenchmark);
     lambdaClient.agentEval.listDatasets.query({ benchmarkId }).then((result) => {
       setDatasets(result);
-      if (result.length > 0) setActiveDatasetId(result[0].id);
     });
   }, [benchmarkId]);
 
+  useEffect(() => {
+    if (!benchmarkId) return;
+    lambdaClient.agentEval.getBenchmark.query({ id: benchmarkId }).then(setBenchmark);
+    refreshDatasets();
+  }, [benchmarkId, refreshDatasets]);
+
   const useFetchRuns = useEvalStore((s) => s.useFetchRuns);
   const runList = useEvalStore((s) => s.runList);
-  useFetchRuns(activeDatasetId);
+  // Fetch all runs for this benchmark (pass undefined to get all)
+  useFetchRuns(undefined);
 
   const completedRuns = runList.filter((r: any) => r.status === 'completed');
   const bestScore =
@@ -288,7 +290,42 @@ const BenchmarkDetail = memo(() => {
                   margin: 0,
                 }}
               >
-                {t('benchmark.detail.stats.cases')}
+                {t('benchmark.detail.stats.datasets')}
+              </p>
+              <p
+                style={{
+                  color: 'var(--ant-color-text)',
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  margin: 0,
+                }}
+              >
+                {datasets.length}
+              </p>
+            </Flexbox>
+          </Flexbox>
+        </Card>
+
+        <Card className={styles.statCard}>
+          <Flexbox align="center" gap={12} horizontal>
+            <div
+              className={styles.statIcon}
+              style={{ background: 'var(--ant-color-primary-bg)' }}
+            >
+              <FlaskConical
+                size={16}
+                style={{ color: 'var(--ant-color-primary)' }}
+              />
+            </div>
+            <Flexbox gap={2}>
+              <p
+                style={{
+                  color: 'var(--ant-color-text-tertiary)',
+                  fontSize: 12,
+                  margin: 0,
+                }}
+              >
+                {t('benchmark.detail.stats.totalCases')}
               </p>
               <p
                 style={{
@@ -373,77 +410,93 @@ const BenchmarkDetail = memo(() => {
             </Flexbox>
           </Flexbox>
         </Card>
+      </div>
 
-        <Card className={styles.statCard}>
-          <Flexbox gap={8}>
-            <p
+      {/* Tags */}
+      {benchmark.tags && benchmark.tags.length > 0 && (
+        <Flexbox gap={6} horizontal style={{ flexWrap: 'wrap' }}>
+          {benchmark.tags.map((tag: string) => (
+            <Badge
+              key={tag}
               style={{
+                backgroundColor: 'transparent',
+                borderColor: 'var(--ant-color-border)',
                 color: 'var(--ant-color-text-tertiary)',
                 fontSize: 12,
-                margin: 0,
               }}
             >
-              {t('benchmark.detail.stats.tags')}
-            </p>
-            <Flexbox gap={4} horizontal style={{ flexWrap: 'wrap' }}>
-              {benchmark.tags?.slice(0, 3).map((tag: string) => (
-                <Badge key={tag} style={{ fontSize: 12 }}>
-                  {tag}
-                </Badge>
-              ))}
-              {benchmark.tags?.length > 3 && (
-                <Badge style={{ fontSize: 12 }}>+{benchmark.tags.length - 3}</Badge>
-              )}
-            </Flexbox>
-          </Flexbox>
-        </Card>
-      </div>
+              {tag}
+            </Badge>
+          ))}
+        </Flexbox>
+      )}
 
       {/* Tabs */}
       <div className={styles.tabsContainer}>
+        <button
+          className={styles.tabButton}
+          data-active={activeTab === 'datasets'}
+          onClick={() => setActiveTab('datasets')}
+        >
+          {t('benchmark.detail.tabs.datasets')}
+          <span
+            className={styles.tabBadge}
+            style={{
+              backgroundColor:
+                activeTab === 'datasets'
+                  ? 'var(--ant-color-primary-bg)'
+                  : 'var(--ant-color-fill-secondary)',
+              color:
+                activeTab === 'datasets'
+                  ? 'var(--ant-color-primary)'
+                  : 'var(--ant-color-text-tertiary)',
+            }}
+          >
+            {datasets.length}
+          </span>
+        </button>
         <button
           className={styles.tabButton}
           data-active={activeTab === 'runs'}
           onClick={() => setActiveTab('runs')}
         >
           {t('benchmark.detail.tabs.runs')}
-          <Badge
+          <span
+            className={styles.tabBadge}
             style={{
-              fontSize: 10,
-              marginLeft: 8,
+              backgroundColor:
+                activeTab === 'runs'
+                  ? 'var(--ant-color-primary-bg)'
+                  : 'var(--ant-color-fill-secondary)',
+              color:
+                activeTab === 'runs'
+                  ? 'var(--ant-color-primary)'
+                  : 'var(--ant-color-text-tertiary)',
             }}
           >
             {runList.length}
-          </Badge>
-        </button>
-        <button
-          className={styles.tabButton}
-          data-active={activeTab === 'data'}
-          onClick={() => setActiveTab('data')}
-        >
-          {t('benchmark.detail.tabs.data')}
+          </span>
         </button>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'runs' ? (
-        <RunsTab
+      {activeTab === 'datasets' ? (
+        <DatasetsTab
           benchmarkId={benchmarkId!}
-          datasetId={activeDatasetId}
-          onCreateRun={() => setCreateRunOpen(true)}
+          datasets={datasets}
+          onImport={() => setImportOpen(true)}
+          onRefresh={refreshDatasets}
         />
       ) : (
-        activeDatasetId && <TestCasesTab datasetId={activeDatasetId} />
+        <RunsTab benchmarkId={benchmarkId!} />
       )}
 
-      {activeDatasetId && (
-        <RunCreateModal
-          benchmarkId={benchmarkId!}
-          datasetId={activeDatasetId}
-          onClose={() => setCreateRunOpen(false)}
-          open={createRunOpen}
-        />
-      )}
+      <DatasetImportModal
+        benchmarkId={benchmarkId!}
+        onClose={() => setImportOpen(false)}
+        onSuccess={refreshDatasets}
+        open={importOpen}
+      />
     </Flexbox>
   );
 });

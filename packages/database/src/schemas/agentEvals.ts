@@ -13,7 +13,6 @@ import {
   jsonb,
   pgTable,
   primaryKey,
-  real,
   text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -39,8 +38,6 @@ export const agentEvalBenchmarks = pgTable(
     description: text('description'),
 
     rubrics: jsonb('rubrics').$type<EvalBenchmarkRubric[]>().notNull(),
-
-    passThreshold: real('pass_threshold').default(0.6).notNull(),
 
     referenceUrl: text('reference_url'),
 

@@ -14,11 +14,13 @@ import {
   Plus,
   XCircle,
 } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 import { useEvalStore } from '@/store/eval';
+
+import RunCreateModal from '../RunCreateModal';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   emptyCard: css`
@@ -54,15 +56,14 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
 interface RunsTabProps {
   benchmarkId: string;
-  datasetId?: string;
-  onCreateRun: () => void;
 }
 
-const RunsTab = memo<RunsTabProps>(({ datasetId, onCreateRun, benchmarkId }) => {
+const RunsTab = memo<RunsTabProps>(({ benchmarkId }) => {
   const { t } = useTranslation('eval');
+  const [createRunOpen, setCreateRunOpen] = useState(false);
   const useFetchRuns = useEvalStore((s) => s.useFetchRuns);
   const runList = useEvalStore((s) => s.runList);
-  useFetchRuns(datasetId);
+  useFetchRuns(undefined);
 
   const sortedRuns = [...runList].sort(
     (a: any, b: any) =>
@@ -117,7 +118,7 @@ const RunsTab = memo<RunsTabProps>(({ datasetId, onCreateRun, benchmarkId }) => 
         <p style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 14, margin: 0 }}>
           {t('benchmark.detail.runCount', { count: runList.length })}
         </p>
-        <Button icon={Plus} onClick={onCreateRun} size="small" type="primary">
+        <Button icon={Plus} onClick={() => setCreateRunOpen(true)} size="small" type="primary">
           {t('run.actions.create')}
         </Button>
       </Flexbox>
@@ -148,7 +149,7 @@ const RunsTab = memo<RunsTabProps>(({ datasetId, onCreateRun, benchmarkId }) => 
                       margin: 0,
                     }}
                   >
-                    {t('run.empty.description')}
+                    {t('run.empty.descriptionBenchmark')}
                   </p>
                 </Flexbox>
               }
@@ -156,7 +157,7 @@ const RunsTab = memo<RunsTabProps>(({ datasetId, onCreateRun, benchmarkId }) => 
             >
               <Button
                 icon={Plus}
-                onClick={onCreateRun}
+                onClick={() => setCreateRunOpen(true)}
                 size="small"
                 style={{ marginTop: 16 }}
                 type="primary"
@@ -380,6 +381,12 @@ const RunsTab = memo<RunsTabProps>(({ datasetId, onCreateRun, benchmarkId }) => 
           })}
         </Flexbox>
       )}
+
+      <RunCreateModal
+        benchmarkId={benchmarkId}
+        onClose={() => setCreateRunOpen(false)}
+        open={createRunOpen}
+      />
     </Flexbox>
   );
 });

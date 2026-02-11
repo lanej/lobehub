@@ -37,7 +37,6 @@ beforeEach(async () => {
       identifier: 'test-benchmark',
       name: 'Test Benchmark',
       rubrics: [],
-      passThreshold: 0.6,
       isSystem: false,
     })
     .returning();

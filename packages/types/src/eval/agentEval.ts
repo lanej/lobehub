@@ -7,6 +7,7 @@
  * Test case content structure
  */
 export interface EvalTestCaseContent {
+  choices?: string[];
   context?: Record<string, unknown>;
   expected?: string;
   input: string;
@@ -40,6 +41,15 @@ export interface EvalRunConfig {
    */
   k?: number;
   maxConcurrency?: number;
+  /**
+   * Score threshold for a test case to be considered "passed"
+   * @default 0.6
+   */
+  passThreshold?: number;
+  promptTemplate?: {
+    system?: string;
+    user: string;
+  };
   timeout?: number;
 }
 
@@ -55,6 +65,19 @@ export interface EvalRunMetrics {
   passedCases: number;
   rubricScores?: Record<string, number>;
   totalCases: number;
+}
+
+/**
+ * Field mapping configuration for dataset import
+ */
+export interface ImportFieldMapping {
+  choices?: string;
+  context?: string;
+  expected?: string;
+  expectedDelimiter?: string;
+  input: string;
+  metadata?: Record<string, string>;
+  sortOrder?: string;
 }
 
 /**

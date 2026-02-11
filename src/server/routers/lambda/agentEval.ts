@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix  */
 import { TRPCError } from '@trpc/server';
-import JSONL from 'jsonl-parse-stringify';
+import { parseDataset } from '@lobechat/dataset-parser';
 import { z } from 'zod';
 
 import {
@@ -41,7 +41,6 @@ export const agentEvalRouter = router({
         name: z.string(),
         description: z.string().optional(),
         rubrics: z.array(z.any()).optional().default([]), // EvalBenchmarkRubric[]
-        passThreshold: z.number().min(0).max(1).default(0.6),
         referenceUrl: z.string().optional(),
         metadata: z.record(z.unknown()).optional(),
         isSystem: z.boolean().default(false),
@@ -95,7 +94,6 @@ export const agentEvalRouter = router({
         name: z.string().optional(),
         description: z.string().optional(),
         rubrics: z.array(z.any()).optional(),
-        passThreshold: z.number().min(0).max(1).optional(),
         referenceUrl: z.string().optional(),
         metadata: z.record(z.unknown()).optional(),
       }),
@@ -236,45 +234,136 @@ export const agentEvalRouter = router({
       }
     }),
 
+  parseDatasetFile: agentEvalProcedure
+    .input(
+      z.object({
+        pathname: z.string(),
+        format: z.enum(['json', 'jsonl', 'csv', 'xlsx']).optional(),
+        filename: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const format = input.format || 'auto';
+      const isXlsx = format === 'xlsx' || input.filename?.match(/\.xlsx?$/i);
+
+      const content = isXlsx
+        ? await ctx.fileService.getFileByteArray(input.pathname)
+        : await ctx.fileService.getFileContent(input.pathname);
+
+      try {
+        const result = parseDataset(content, {
+          filename: input.filename,
+          format: format === 'auto' ? undefined : format,
+          preview: 10,
+        });
+
+        return {
+          headers: result.headers,
+          preview: result.rows,
+          totalCount: result.totalCount,
+          format: result.format,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Failed to parse file: ${error.message}`,
+        });
+      }
+    }),
+
   importDataset: agentEvalProcedure
     .input(
       z.object({
         datasetId: z.string(),
         pathname: z.string(),
-        format: z.enum(['jsonl', 'json']).default('jsonl'),
+        format: z.enum(['json', 'jsonl', 'csv', 'xlsx']).optional(),
+        filename: z.string().optional(),
+        fieldMapping: z.object({
+          input: z.string(),
+          expected: z.string().optional(),
+          expectedDelimiter: z.string().optional(),
+          choices: z.string().optional(),
+          context: z.string().optional(),
+          metadata: z.record(z.string()).optional(),
+          sortOrder: z.string().optional(),
+        }),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Get file content
-      const dataStr = await ctx.fileService.getFileContent(input.pathname);
+      const format = input.format || 'auto';
+      const isXlsx = format === 'xlsx' || input.filename?.match(/\.xlsx?$/i);
 
-      // Parse based on format
-      let items: any[];
-      if (input.format === 'jsonl') {
-        items = JSONL.parse(dataStr);
-      } else {
-        items = JSON.parse(dataStr);
-        if (!Array.isArray(items)) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'JSON file must contain an array',
-          });
-        }
+      const content = isXlsx
+        ? await ctx.fileService.getFileByteArray(input.pathname)
+        : await ctx.fileService.getFileContent(input.pathname);
+
+      let parsed;
+      try {
+        parsed = parseDataset(content, {
+          filename: input.filename,
+          format: format === 'auto' ? undefined : format,
+        });
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Failed to parse file: ${error.message}`,
+        });
       }
 
-      // Validate and transform items
-      const testCases = items.map((item, index) => ({
-        datasetId: input.datasetId,
-        content: {
-          input: item.input || item.question,
-          expected: item.expected || item.answer || item.ideal,
-          context: item.context,
-        },
-        metadata: item.metadata || {},
-        sortOrder: item.sortOrder || index,
-      }));
+      const { fieldMapping } = input;
 
-      // Batch insert
+      const testCases = parsed.rows.map((row, index) => {
+        let expectedStr: string | undefined;
+
+        if (fieldMapping.expected) {
+          const raw = row[fieldMapping.expected];
+          if (raw != null) {
+            // Split multi-candidate answers by delimiter
+            if (fieldMapping.expectedDelimiter) {
+              const candidates = String(raw)
+                .split(fieldMapping.expectedDelimiter)
+                .map((s: string) => s.trim())
+                .filter(Boolean);
+              expectedStr = candidates.length > 1 ? JSON.stringify(candidates) : String(raw);
+            } else {
+              expectedStr = String(raw);
+            }
+          }
+        }
+
+        // Handle choices field (array or JSON string)
+        let choices: string[] | undefined;
+        if (fieldMapping.choices) {
+          const rawChoices = row[fieldMapping.choices];
+          if (Array.isArray(rawChoices)) {
+            choices = rawChoices.map(String);
+          } else if (typeof rawChoices === 'string') {
+            try {
+              const parsed = JSON.parse(rawChoices);
+              if (Array.isArray(parsed)) choices = parsed.map(String);
+            } catch {
+              // Not JSON, skip
+            }
+          }
+        }
+
+        return {
+          datasetId: input.datasetId,
+          content: {
+            input: String(row[fieldMapping.input] ?? ''),
+            expected: expectedStr,
+            choices,
+            context: fieldMapping.context ? row[fieldMapping.context] : undefined,
+          },
+          metadata: fieldMapping.metadata
+            ? Object.fromEntries(
+                Object.entries(fieldMapping.metadata).map(([key, col]) => [key, row[col as string]]),
+              )
+            : {},
+          sortOrder: fieldMapping.sortOrder ? Number(row[fieldMapping.sortOrder]) || index : index,
+        };
+      });
+
       const result = await ctx.testCaseModel.batchCreate(testCases);
       return { count: result.length, data: result };
     }),
@@ -289,6 +378,7 @@ export const agentEvalRouter = router({
         content: z.object({
           input: z.string(),
           expected: z.string().optional(),
+          choices: z.array(z.string()).optional(),
           context: z.record(z.unknown()).optional(),
         }),
         metadata: z.record(z.unknown()).optional(),
@@ -329,6 +419,7 @@ export const agentEvalRouter = router({
             content: z.object({
               input: z.string(),
               expected: z.string().optional(),
+              choices: z.array(z.string()).optional(),
               context: z.record(z.unknown()).optional(),
             }),
             metadata: z.record(z.unknown()).optional(),
