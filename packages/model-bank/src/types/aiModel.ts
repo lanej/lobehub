@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { ModelParamsSchema } from '../standard-parameters';
+import type { ModelParamsSchema, VideoModelParamsSchema } from '../standard-parameters';
 
 export type ModelPriceCurrency = 'CNY' | 'USD';
 
@@ -144,7 +144,10 @@ export type PricingUnitName =
   | 'imageGeneration' // for image generation models
   | 'imageInput'
   | 'imageInput_cacheRead'
-  | 'imageOutput';
+  | 'imageOutput'
+
+  // Video-based pricing units
+  | 'videoGeneration';
 
 export type PricingUnitType =
   | 'millionTokens' // per 1M tokens
@@ -310,6 +313,12 @@ export interface AIImageModelCard extends AIBaseModelCard {
   pricing?: Pricing;
   resolutions?: string[];
   type: 'image';
+}
+
+export interface AIVideoModelCard extends AIBaseModelCard {
+  parameters?: VideoModelParamsSchema;
+  pricing?: Pricing;
+  type: 'text2video';
 }
 
 export interface AITTSModelCard extends AIBaseModelCard {
