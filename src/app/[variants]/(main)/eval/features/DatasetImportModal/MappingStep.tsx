@@ -1,11 +1,13 @@
 'use client';
 
 import { Flexbox } from '@lobehub/ui';
-import { Input, Select, Table } from 'antd';
-import { memo, useMemo } from 'react';
+import { Checkbox, Input, Select, Table } from 'antd';
+import { cssVar } from 'antd-style';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { type DatasetPreset } from '../../config/datasetPresets';
+import { ROLE_COLORS } from './const';
 
 // Known candidate names for auto-inference
 const INPUT_CANDIDATES = new Set([
@@ -31,7 +33,14 @@ const EXPECTED_CANDIDATES = new Set([
 const CONTEXT_CANDIDATES = new Set(['context', 'reference', 'passage', 'document']);
 const CHOICES_CANDIDATES = new Set(['choices', 'options', 'alternatives', 'candidates']);
 
-type MappingTarget = 'choices' | 'context' | 'expected' | 'ignore' | 'input' | 'metadata' | 'sortOrder';
+type MappingTarget =
+  | 'choices'
+  | 'context'
+  | 'expected'
+  | 'ignore'
+  | 'input'
+  | 'metadata'
+  | 'sortOrder';
 
 export interface FieldMappingValue {
   choices?: string;
@@ -44,13 +53,16 @@ export interface FieldMappingValue {
 }
 
 interface MappingStepProps {
+  delimiter: string;
   headers: string[];
   mapping: Record<string, MappingTarget>;
   onDelimiterChange: (delimiter: string) => void;
   onMappingChange: (mapping: Record<string, MappingTarget>) => void;
   preview: Record<string, any>[];
-  delimiter: string;
+  totalCount: number;
 }
+
+const SORT_ORDER_CANDIDATES = new Set(['id', 'number', 'index', 'no', 'order', 'sort_order']);
 
 const autoInferMapping = (
   headers: string[],
@@ -61,6 +73,7 @@ const autoInferMapping = (
   let expectedFound = false;
   let contextFound = false;
   let choicesFound = false;
+  let sortOrderFound = false;
 
   // Use preset's fieldInference if available, otherwise use default candidates
   const inputCandidates = preset
@@ -75,6 +88,9 @@ const autoInferMapping = (
   const contextCandidates = preset
     ? new Set(preset.fieldInference.context.map((s) => s.toLowerCase()))
     : CONTEXT_CANDIDATES;
+  const sortOrderCandidates = preset?.fieldInference.sortOrder
+    ? new Set(preset.fieldInference.sortOrder.map((s) => s.toLowerCase()))
+    : SORT_ORDER_CANDIDATES;
 
   for (const h of headers) {
     const lower = h.toLowerCase().trim();
@@ -90,8 +106,11 @@ const autoInferMapping = (
     } else if (!contextFound && contextCandidates.has(lower)) {
       result[h] = 'context';
       contextFound = true;
+    } else if (!sortOrderFound && sortOrderCandidates.has(lower)) {
+      result[h] = 'sortOrder';
+      sortOrderFound = true;
     } else {
-      result[h] = 'metadata';
+      result[h] = 'ignore';
     }
   }
 
@@ -105,85 +124,155 @@ const autoInferMapping = (
 
 export { autoInferMapping };
 
-const MappingStep = memo<MappingStepProps>(
-  ({ headers, mapping, onMappingChange, preview, delimiter, onDelimiterChange }) => {
-    const { t } = useTranslation('eval');
+const COL_WIDTHS: Record<MappingTarget, number> = {
+  choices: 200,
+  context: 240,
+  expected: 300,
+  ignore: 100,
+  input: 800,
+  metadata: 160,
+  sortOrder: 120,
+};
 
-    const targetOptions = [
-      { label: t('dataset.import.input'), value: 'input' },
-      { label: t('dataset.import.expected'), value: 'expected' },
-      { label: t('dataset.import.choices'), value: 'choices' },
-      { label: t('dataset.import.context'), value: 'context' },
-      { label: t('dataset.import.sortOrder'), value: 'sortOrder' },
-      { label: t('dataset.import.metadata'), value: 'metadata' },
-      { label: t('dataset.import.ignore'), value: 'ignore' },
-    ];
+const WRAP_ROLES = new Set<MappingTarget>(['input', 'expected']);
+
+const MappingStep = memo<MappingStepProps>(
+  ({ headers, mapping, onMappingChange, preview, delimiter, onDelimiterChange, totalCount }) => {
+    const { t } = useTranslation('eval');
+    const [hideSkipped, setHideSkipped] = useState(true);
 
     const hasExpected = Object.values(mapping).includes('expected');
+    const hasIgnored = Object.values(mapping).includes('ignore');
+
+    const visibleHeaders = useMemo(
+      () => (hideSkipped ? headers.filter((h) => mapping[h] !== 'ignore') : headers),
+      [headers, mapping, hideSkipped],
+    );
+
+    const roleDescColor = (role: MappingTarget) => ROLE_COLORS[role] || cssVar.colorTextTertiary;
+
+    const targetOptions: { label: React.ReactNode; value: MappingTarget }[] = [
+      { desc: 'inputDesc', label: 'input', value: 'input' },
+      { desc: 'expectedDesc', label: 'expected', value: 'expected' },
+      { desc: 'choicesDesc', label: 'choices', value: 'choices' },
+      { desc: 'contextDesc', label: 'context', value: 'context' },
+      { desc: 'sortOrderDesc', label: 'sortOrder', value: 'sortOrder' },
+      { desc: 'metadataDesc', label: 'metadata', value: 'metadata' },
+      { desc: 'ignoreDesc', label: 'ignore', value: 'ignore' },
+    ].map(({ desc, label, value }) => ({
+      label: (
+        <Flexbox gap={2}>
+          <span style={{ fontSize: 11 }}>{t(`dataset.import.${label}`)}</span>
+          <span style={{ color: roleDescColor(value as MappingTarget), fontSize: 11 }}>
+            {t(`dataset.import.${desc}`)}
+          </span>
+        </Flexbox>
+      ),
+      value: value as MappingTarget,
+    }));
 
     const columns = useMemo(
       () =>
-        headers.map((h) => ({
-          dataIndex: h,
-          ellipsis: true,
-          title: (
-            <Flexbox gap={4}>
-              <span style={{ fontSize: 12, fontWeight: 600 }}>{h}</span>
-              <Select
-                onChange={(val: MappingTarget) => {
-                  const newMapping = { ...mapping };
+        visibleHeaders.map((h) => {
+          const role = mapping[h];
+          const isIgnored = role === 'ignore';
+          const allowWrap = WRAP_ROLES.has(role);
 
-                  // Ensure single assignment for input/expected/context/sortOrder
-                  if (val !== 'metadata' && val !== 'ignore') {
-                    for (const [k, v] of Object.entries(newMapping)) {
-                      if (v === val) newMapping[k] = 'metadata';
+          return {
+            dataIndex: h,
+            ellipsis: !allowWrap,
+            onCell: isIgnored
+              ? () => ({ style: { color: cssVar.colorTextQuaternary } })
+              : allowWrap
+                ? () => ({
+                    style: {
+                      verticalAlign: 'top',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    },
+                  })
+                : undefined,
+            title: (
+              <Flexbox gap={4}>
+                <Select
+                  onChange={(val: MappingTarget) => {
+                    const newMapping = { ...mapping };
+
+                    // Ensure single assignment for input/expected/context/sortOrder
+                    if (val !== 'metadata' && val !== 'ignore') {
+                      for (const [k, v] of Object.entries(newMapping)) {
+                        if (v === val) newMapping[k] = 'ignore';
+                      }
                     }
-                  }
 
-                  newMapping[h] = val;
-                  onMappingChange(newMapping);
-                }}
-                options={targetOptions}
-                popupMatchSelectWidth={false}
-                size="small"
-                style={{ width: '100%' }}
-                value={mapping[h]}
-              />
-            </Flexbox>
-          ),
-          width: 160,
-        })),
-      [headers, mapping, onMappingChange],
+                    newMapping[h] = val;
+                    onMappingChange(newMapping);
+                  }}
+                  options={targetOptions}
+                  popupMatchSelectWidth={200}
+                  // size="small"
+                  variant={'filled'}
+                  style={{ width: '100%' }}
+                  value={role}
+                />
+                <span style={{ fontSize:15 }}>{h}</span>
+              </Flexbox>
+            ),
+            width: COL_WIDTHS[role],
+          };
+        }),
+      [visibleHeaders, mapping, onMappingChange],
+    );
+
+    const scrollX = useMemo(
+      () => visibleHeaders.reduce((sum, h) => sum + COL_WIDTHS[mapping[h]], 0),
+      [visibleHeaders, mapping],
     );
 
     return (
-      <Flexbox gap={16}>
-        <p style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 13, margin: 0 }}>
-          {t('dataset.import.fieldMapping.desc')}
-        </p>
+      <Flexbox gap={12}>
+        <Flexbox align="center" horizontal justify="space-between">
+          <Flexbox align="center" gap={16} horizontal>
+            <span style={{ color: cssVar.colorTextTertiary, fontSize: 13 }}>
+              {t('dataset.import.fieldMapping.desc')}
+            </span>
+            <span style={{ color: cssVar.colorTextQuaternary, fontSize: 12 }}>
+              {t('dataset.import.preview.rows', { count: totalCount })}
+            </span>
+            {hasIgnored && (
+              <Checkbox checked={hideSkipped} onChange={(e) => setHideSkipped(e.target.checked)}>
+                <span style={{ color: cssVar.colorTextSecondary, fontSize: 12 }}>
+                  {t('dataset.import.hideSkipped')}
+                </span>
+              </Checkbox>
+            )}
+          </Flexbox>
+          {hasExpected && (
+            <Flexbox align="center" gap={8} horizontal>
+              <span
+                style={{ color: cssVar.colorTextSecondary, fontSize: 12, whiteSpace: 'nowrap' }}
+              >
+                {t('dataset.import.expectedDelimiter.desc')}
+              </span>
+              <Input
+                onChange={(e) => onDelimiterChange(e.target.value)}
+                placeholder={t('dataset.import.expectedDelimiter.placeholder')}
+                size="small"
+                style={{ width: 120 }}
+                value={delimiter}
+              />
+            </Flexbox>
+          )}
+        </Flexbox>
 
         <Table
           columns={columns}
           dataSource={preview.map((row, i) => ({ ...row, _key: i }))}
           pagination={false}
           rowKey="_key"
-          scroll={{ x: headers.length * 160 }}
+          scroll={{ x: scrollX, y: 'calc(95vh - 280px)' }}
           size="small"
         />
-
-        {hasExpected && (
-          <Flexbox gap={4}>
-            <span style={{ color: 'var(--ant-color-text-secondary)', fontSize: 13 }}>
-              {t('dataset.import.expectedDelimiter.desc')}
-            </span>
-            <Input
-              onChange={(e) => onDelimiterChange(e.target.value)}
-              placeholder={t('dataset.import.expectedDelimiter.placeholder')}
-              style={{ width: 200 }}
-              value={delimiter}
-            />
-          </Flexbox>
-        )}
       </Flexbox>
     );
   },

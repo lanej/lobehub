@@ -186,19 +186,21 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     return (
       <Modal
         allowFullscreen
+        centered
         destroyOnHidden
         cancelText={step > 0 ? t('dataset.import.prev') : undefined}
         footer={step === 0 ? null : undefined}
         okText={okText}
         open={open}
         title={t('dataset.import.title')}
-        width={720}
+        width={step === 0 ? 720 : '98vw'}
         okButtonProps={{
           disabled: step === 1 && !hasInputMapping,
           loading: importing,
         }}
         onCancel={step > 0 ? () => setStep(step - 1) : handleClose}
         onOk={onOk}
+        styles={step > 0 ? { body: { height: '99vh', overflow: 'auto' } } : undefined}
       >
         <div style={{ paddingBlock: 16 }}>
           {step === 0 && (
@@ -211,6 +213,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
               headers={headers}
               mapping={mapping}
               preview={preview}
+              totalCount={totalCount}
               onDelimiterChange={setDelimiter}
               onMappingChange={setMapping}
             />

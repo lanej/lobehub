@@ -24,6 +24,7 @@ export interface DatasetPreset {
     expected: string[];
     choices: string[];
     context: string[];
+    sortOrder?: string[];
   };
 
   // 验证规则
@@ -65,7 +66,7 @@ export const DATASET_PRESETS: Record<string, DatasetPreset> = {
     description: 'Chinese search: ~200 factual query questions',
     icon: Globe,
     formatDescription:
-      'format: id (sort order), prompt (input), type (metadata), answer (expected)',
+      'format: id (item number), prompt (input), type (metadata), answer (expected)',
     requiredFields: ['prompt', 'answer'],
     optionalFields: ['type', 'id'],
     fieldInference: {
@@ -73,6 +74,7 @@ export const DATASET_PRESETS: Record<string, DatasetPreset> = {
       expected: ['answer', 'response'],
       choices: [],
       context: ['type', 'category'],
+      sortOrder: ['id'],
     },
     validation: {
       requireExpected: true,

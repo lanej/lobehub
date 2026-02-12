@@ -254,7 +254,7 @@ export const agentEvalRouter = router({
         const result = parseDataset(content, {
           filename: input.filename,
           format: format === 'auto' ? undefined : format,
-          preview: 10,
+          preview: 50,
         });
 
         return {

@@ -8,6 +8,7 @@ import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { type DatasetPreset } from '../../config/datasetPresets';
+import { ROLE_COLORS } from './const';
 
 const { Dragger } = Upload;
 
@@ -17,11 +18,15 @@ interface UploadStepProps {
   preset?: DatasetPreset;
 }
 
-type FieldRole = 'input' | 'expected' | 'choices' | 'context';
+type FieldRole = 'choices' | 'context' | 'expected' | 'input' | 'sortOrder';
+
+const FIELD_ROLE_KEYS: FieldRole[] = ['input', 'expected', 'choices', 'context', 'sortOrder'];
 
 const getFieldRole = (fieldName: string, fieldInference: DatasetPreset['fieldInference']): FieldRole | undefined => {
-  for (const role of ['input', 'expected', 'choices', 'context'] as FieldRole[]) {
-    if (fieldInference[role].some((f) => f.toLowerCase() === fieldName.toLowerCase())) {
+  const lower = fieldName.toLowerCase();
+  for (const role of FIELD_ROLE_KEYS) {
+    const candidates = fieldInference[role];
+    if (candidates?.some((f) => f.toLowerCase() === lower)) {
       return role;
     }
   }
@@ -92,19 +97,22 @@ const UploadStep = memo<UploadStepProps>(({ onFileSelect, loading, preset }) => 
 
             {/* Fields */}
             <Flexbox gap={8} horizontal style={{ flexWrap: 'wrap' }}>
-              {fields.map((field) => (
-                <Flexbox align="center" gap={2} key={field.name}>
-                  <Tag color={field.required ? 'blue' : undefined}>
-                    {field.name}
-                    {field.required && ' *'}
-                  </Tag>
-                  {field.role && (
-                    <div style={{ color: cssVar.colorTextTertiary, fontSize: 10 }}>
-                      {field.role}
-                    </div>
-                  )}
-                </Flexbox>
-              ))}
+              {fields.map((field) => {
+                const color = field.role ? ROLE_COLORS[field.role] : undefined;
+                return (
+                  <Flexbox align="center" gap={2} key={field.name}>
+                    <Tag style={color ? { background: `color-mix(in srgb, ${color} 15%, transparent)`, borderColor: 'transparent', color } : undefined}>
+                      {field.name}
+                      {field.required && ' *'}
+                    </Tag>
+                    {field.role && (
+                      <div style={{ color: color || cssVar.colorTextTertiary, fontSize: 10 }}>
+                        {field.role}
+                      </div>
+                    )}
+                  </Flexbox>
+                );
+              })}
             </Flexbox>
           </Flexbox>
         </div>
