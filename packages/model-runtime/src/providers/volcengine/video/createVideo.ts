@@ -14,7 +14,17 @@ export async function createVolcengineVideo(
   options: CreateVideoOptions,
 ): Promise<CreateVideoResponse> {
   const { model, params } = payload;
-  const { prompt, imageUrl, endImageUrl, aspectRatio, duration, generateAudio, seed, resolution, cameraFixed } = params;
+  const {
+    prompt,
+    imageUrl,
+    endImageUrl,
+    aspectRatio,
+    duration,
+    generateAudio,
+    seed,
+    resolution,
+    cameraFixed,
+  } = params;
 
   log('Creating video with Volcengine API - model: %s, params: %O', model, params);
 
@@ -44,6 +54,7 @@ export async function createVolcengineVideo(
   if (seed !== undefined && seed !== null) body.seed = seed;
   if (resolution !== undefined) body.resolution = resolution;
   if (cameraFixed !== undefined) body.camera_fixed = cameraFixed;
+  if (payload.callbackUrl) body.callback_url = payload.callbackUrl;
 
   log('Volcengine video API request body: %O', body);
 

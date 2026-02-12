@@ -2,6 +2,7 @@
 import { RuntimeVideoGenParams } from 'model-bank';
 
 export type CreateVideoPayload = {
+  callbackUrl?: string;
   model: string;
   params: RuntimeVideoGenParams;
 };
