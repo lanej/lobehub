@@ -15,17 +15,17 @@ import { authSelectors } from '@/store/user/selectors';
 import type { VideoStore } from '../../store';
 
 export interface GenerationConfigAction {
-  setParamOnInput<K extends RuntimeVideoGenParamsKeys>(
-    paramName: K,
-    value: RuntimeVideoGenParamsValue,
-  ): void;
-
-  setModelAndProviderOnSelect(model: string, provider: string): void;
-
   initializeVideoConfig(
     isLogin?: boolean,
     lastSelectedVideoModel?: string,
     lastSelectedVideoProvider?: string,
+  ): void;
+
+  setModelAndProviderOnSelect(model: string, provider: string): void;
+
+  setParamOnInput<K extends RuntimeVideoGenParamsKeys>(
+    paramName: K,
+    value: RuntimeVideoGenParamsValue,
   ): void;
 }
 
@@ -59,41 +59,7 @@ export const createGenerationConfigSlice: StateCreator<
   [['zustand/devtools', never]],
   [],
   GenerationConfigAction
-> = (set, get) => ({
-  setParamOnInput: (paramName, value) => {
-    set(
-      (state) => {
-        const { parameters } = state;
-        return { parameters: { ...parameters, [paramName]: value } };
-      },
-      false,
-      `setParamOnInput/${paramName}`,
-    );
-  },
-
-  setModelAndProviderOnSelect: (model, provider) => {
-    const { defaultValues, parametersSchema } = getVideoModelAndDefaults(model, provider);
-
-    set(
-      {
-        model,
-        parameters: defaultValues,
-        parametersSchema,
-        provider,
-      },
-      false,
-      `setModelAndProviderOnSelect/${model}/${provider}`,
-    );
-
-    const isLogin = authSelectors.isLogin(useUserStore.getState());
-    if (isLogin) {
-      useGlobalStore.getState().updateSystemStatus({
-        lastSelectedVideoModel: model,
-        lastSelectedVideoProvider: provider,
-      });
-    }
-  },
-
+> = (set) => ({
   initializeVideoConfig: (isLogin, lastSelectedVideoModel, lastSelectedVideoProvider) => {
     if (isLogin && lastSelectedVideoModel && lastSelectedVideoProvider) {
       try {
@@ -119,5 +85,39 @@ export const createGenerationConfigSlice: StateCreator<
     } else {
       set({ isInit: true }, false, 'initializeVideoConfig/default');
     }
+  },
+
+  setModelAndProviderOnSelect: (model, provider) => {
+    const { defaultValues, parametersSchema } = getVideoModelAndDefaults(model, provider);
+
+    set(
+      {
+        model,
+        parameters: defaultValues,
+        parametersSchema,
+        provider,
+      },
+      false,
+      `setModelAndProviderOnSelect/${model}/${provider}`,
+    );
+
+    const isLogin = authSelectors.isLogin(useUserStore.getState());
+    if (isLogin) {
+      useGlobalStore.getState().updateSystemStatus({
+        lastSelectedVideoModel: model,
+        lastSelectedVideoProvider: provider,
+      });
+    }
+  },
+
+  setParamOnInput: (paramName, value) => {
+    set(
+      (state) => {
+        const { parameters } = state;
+        return { parameters: { ...parameters, [paramName]: value } };
+      },
+      false,
+      `setParamOnInput/${paramName}`,
+    );
   },
 });
