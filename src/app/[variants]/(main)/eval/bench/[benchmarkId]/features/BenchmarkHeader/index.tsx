@@ -35,18 +35,24 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
 interface BenchmarkHeaderProps {
   benchmark: any;
-  onRefresh?: () => void;
+  onBenchmarkUpdate?: (benchmark: any) => void;
   systemIcon?: LucideIcon;
 }
 
 const BenchmarkHeader = memo<BenchmarkHeaderProps>(
-  ({ benchmark, onRefresh, systemIcon = Server }) => {
+  ({ benchmark, onBenchmarkUpdate, systemIcon = Server }) => {
     const { t } = useTranslation('eval');
     const { modal } = App.useApp();
     const navigate = useNavigate();
     const deleteBenchmark = useEvalStore((s) => s.deleteBenchmark);
-    const refreshBenchmarks = useEvalStore((s) => s.refreshBenchmarks);
+    const refreshBenchmarkDetail = useEvalStore((s) => s.refreshBenchmarkDetail);
     const [editOpen, setEditOpen] = useState(false);
+
+    const handleEditSuccess = async () => {
+      // Refetch the benchmark after editing
+      await refreshBenchmarkDetail(benchmark.id);
+      onBenchmarkUpdate?.(benchmark);
+    };
 
   const handleDelete = () => {
     modal.confirm({
@@ -149,10 +155,7 @@ const BenchmarkHeader = memo<BenchmarkHeaderProps>(
       <BenchmarkEditModal
         benchmark={benchmark}
         onCancel={() => setEditOpen(false)}
-        onSuccess={() => {
-          refreshBenchmarks();
-          onRefresh?.();
-        }}
+        onSuccess={handleEditSuccess}
         open={editOpen}
       />
     </>

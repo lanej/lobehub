@@ -1,8 +1,8 @@
 import type { SWRResponse } from 'swr';
 import type { StateCreator } from 'zustand/vanilla';
 
-import { lambdaClient } from '@/libs/trpc/client';
 import { mutate, useClientDataSWR } from '@/libs/swr';
+import { agentEvalService } from '@/services/agentEval';
 import type { EvalStore } from '@/store/eval/store';
 
 const FETCH_RUNS_KEY = 'FETCH_EVAL_RUNS';
@@ -33,14 +33,14 @@ export const createRunSlice: StateCreator<
   RunAction
 > = (set, get) => ({
   abortRun: async (id) => {
-    await lambdaClient.agentEval.abortRun.mutate({ id });
+    await agentEvalService.abortRun(id);
     await get().refreshRunDetail(id);
   },
 
   createRun: async (params) => {
     set({ isCreatingRun: true }, false, 'createRun/start');
     try {
-      const result = await lambdaClient.agentEval.createRun.mutate(params);
+      const result = await agentEvalService.createRun(params);
       await get().refreshRuns();
       return result;
     } finally {
@@ -49,7 +49,7 @@ export const createRunSlice: StateCreator<
   },
 
   deleteRun: async (id) => {
-    await lambdaClient.agentEval.deleteRun.mutate({ id });
+    await agentEvalService.deleteRun(id);
     await get().refreshRuns();
   },
 
@@ -62,14 +62,14 @@ export const createRunSlice: StateCreator<
   },
 
   startRun: async (id, force) => {
-    await lambdaClient.agentEval.startRun.mutate({ id, force });
+    await agentEvalService.startRun(id, force);
     await get().refreshRunDetail(id);
   },
 
   useFetchRunDetail: (id) => {
     return useClientDataSWR(
       id ? [FETCH_RUN_DETAIL_KEY, id] : null,
-      () => lambdaClient.agentEval.getRunDetails.query({ id }),
+      () => agentEvalService.getRunDetails(id),
       {
         onSuccess: (data: any) => {
           set({ isLoadingRunDetail: false, runDetail: data }, false, 'useFetchRunDetail/success');
@@ -81,7 +81,7 @@ export const createRunSlice: StateCreator<
   useFetchRunResults: (id) => {
     return useClientDataSWR(
       id ? [FETCH_RUN_RESULTS_KEY, id] : null,
-      () => lambdaClient.agentEval.getRunResults.query({ id }),
+      () => agentEvalService.getRunResults(id),
       {
         onSuccess: (data: any) => {
           set(
@@ -97,7 +97,7 @@ export const createRunSlice: StateCreator<
   useFetchRuns: (datasetId) => {
     return useClientDataSWR(
       [FETCH_RUNS_KEY, datasetId],
-      () => lambdaClient.agentEval.listRuns.query({ datasetId }),
+      () => agentEvalService.listRuns(datasetId!),
       {
         onSuccess: (data: any) => {
           set({ isLoadingRuns: false, runList: data.data }, false, 'useFetchRuns/success');

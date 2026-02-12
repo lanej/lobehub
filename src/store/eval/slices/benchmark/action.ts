@@ -1,11 +1,12 @@
 import type { SWRResponse } from 'swr';
 import type { StateCreator } from 'zustand/vanilla';
 
-import { lambdaClient } from '@/libs/trpc/client';
 import { mutate, useClientDataSWR } from '@/libs/swr';
+import { agentEvalService } from '@/services/agentEval';
 import type { EvalStore } from '@/store/eval/store';
 
 const FETCH_BENCHMARKS_KEY = 'FETCH_BENCHMARKS';
+const FETCH_BENCHMARK_DETAIL_KEY = 'FETCH_BENCHMARK_DETAIL';
 
 export interface BenchmarkAction {
   createBenchmark: (params: {
@@ -14,8 +15,10 @@ export interface BenchmarkAction {
     metadata?: Record<string, unknown>;
     name: string;
     rubrics?: any[];
+    tags?: string[];
   }) => Promise<any>;
   deleteBenchmark: (id: string) => Promise<void>;
+  refreshBenchmarkDetail: (id: string) => Promise<void>;
   refreshBenchmarks: () => Promise<void>;
   updateBenchmark: (params: {
     description?: string;
@@ -23,7 +26,9 @@ export interface BenchmarkAction {
     identifier: string;
     metadata?: Record<string, unknown>;
     name: string;
+    tags?: string[];
   }) => Promise<void>;
+  useFetchBenchmarkDetail: (id?: string) => SWRResponse;
   useFetchBenchmarks: () => SWRResponse;
 }
 
@@ -36,12 +41,13 @@ export const createBenchmarkSlice: StateCreator<
   createBenchmark: async (params) => {
     set({ isCreatingBenchmark: true }, false, 'createBenchmark/start');
     try {
-      const result = await lambdaClient.agentEval.createBenchmark.mutate({
+      const result = await agentEvalService.createBenchmark({
         identifier: params.identifier,
         name: params.name,
         description: params.description,
         metadata: params.metadata,
         rubrics: params.rubrics ?? [],
+        tags: params.tags,
       });
       await get().refreshBenchmarks();
       return result;
@@ -53,11 +59,15 @@ export const createBenchmarkSlice: StateCreator<
   deleteBenchmark: async (id) => {
     set({ isDeletingBenchmark: true }, false, 'deleteBenchmark/start');
     try {
-      await lambdaClient.agentEval.deleteBenchmark.mutate({ id });
+      await agentEvalService.deleteBenchmark(id);
       await get().refreshBenchmarks();
     } finally {
       set({ isDeletingBenchmark: false }, false, 'deleteBenchmark/end');
     }
+  },
+
+  refreshBenchmarkDetail: async (id) => {
+    await mutate([FETCH_BENCHMARK_DETAIL_KEY, id]);
   },
 
   refreshBenchmarks: async () => {
@@ -67,12 +77,13 @@ export const createBenchmarkSlice: StateCreator<
   updateBenchmark: async (params) => {
     set({ isUpdatingBenchmark: true }, false, 'updateBenchmark/start');
     try {
-      await lambdaClient.agentEval.updateBenchmark.mutate({
+      await agentEvalService.updateBenchmark({
         id: params.id,
         identifier: params.identifier,
         name: params.name,
         description: params.description,
         metadata: params.metadata,
+        tags: params.tags,
       });
       await get().refreshBenchmarks();
     } finally {
@@ -80,9 +91,30 @@ export const createBenchmarkSlice: StateCreator<
     }
   },
 
+  useFetchBenchmarkDetail: (id) => {
+    return useClientDataSWR(
+      id ? [FETCH_BENCHMARK_DETAIL_KEY, id] : null,
+      () => agentEvalService.getBenchmark(id!),
+      {
+        onSuccess: (data: any) => {
+          set(
+            {
+              benchmarkDetail: data,
+              isLoadingBenchmarkDetail: false,
+            },
+            false,
+            'useFetchBenchmarkDetail/success',
+          );
+        },
+      },
+    );
+  },
+
   useFetchBenchmarks: () => {
-    return useClientDataSWR(FETCH_BENCHMARKS_KEY, () =>
-      lambdaClient.agentEval.listBenchmarks.query(), {
+    return useClientDataSWR(
+      FETCH_BENCHMARKS_KEY,
+      () => agentEvalService.listBenchmarks(),
+      {
         onSuccess: (data: any) => {
           set(
             { benchmarkList: data, benchmarkListInit: true, isLoadingBenchmarkList: false },

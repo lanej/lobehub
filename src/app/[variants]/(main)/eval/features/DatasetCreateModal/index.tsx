@@ -6,7 +6,8 @@ import { cssVar } from 'antd-style';
 import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { lambdaClient } from '@/libs/trpc/client';
+import { agentEvalService } from '@/services/agentEval';
+
 import { DATASET_PRESETS, getPresetsByCategory } from '../../config/datasetPresets';
 
 const toIdentifier = (name: string) =>
@@ -61,7 +62,7 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
         const values = await form.validateFields();
         setLoading(true);
 
-        const result = await lambdaClient.agentEval.createDataset.mutate({
+        const result = await agentEvalService.createDataset({
           benchmarkId,
           identifier: values.identifier.trim(),
           name: values.name,

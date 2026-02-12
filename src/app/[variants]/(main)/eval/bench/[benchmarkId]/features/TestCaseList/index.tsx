@@ -4,10 +4,10 @@ import { Tag } from '@lobehub/ui';
 import { Flexbox } from '@lobehub/ui';
 import { Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { lambdaClient } from '@/libs/trpc/client';
+import { useEvalStore } from '@/store/eval';
 
 interface TestCaseListProps {
   datasetId: string;
@@ -15,28 +15,18 @@ interface TestCaseListProps {
 
 const TestCaseList = memo<TestCaseListProps>(({ datasetId }) => {
   const { t } = useTranslation('eval');
-  const [data, setData] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20 });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const result = await lambdaClient.agentEval.listTestCases.query({
-          datasetId,
-          limit: pagination.pageSize,
-          offset: (pagination.current - 1) * pagination.pageSize,
-        });
-        setData(result.data);
-        setTotal(result.total);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [datasetId, pagination.current, pagination.pageSize]);
+  const useFetchTestCases = useEvalStore((s) => s.useFetchTestCases);
+  const data = useEvalStore((s) => s.testCaseList);
+  const total = useEvalStore((s) => s.testCaseTotal);
+  const loading = useEvalStore((s) => s.isLoadingTestCases);
+
+  useFetchTestCases({
+    datasetId,
+    limit: pagination.pageSize,
+    offset: (pagination.current - 1) * pagination.pageSize,
+  });
 
   const columns: ColumnsType<any> = [
     {

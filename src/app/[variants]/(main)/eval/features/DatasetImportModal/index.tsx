@@ -5,8 +5,8 @@ import { App } from 'antd';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { lambdaClient } from '@/libs/trpc/client';
 import { uploadService } from '@/services/upload';
+import { useEvalStore } from '@/store/eval';
 
 import { getPresetById } from '../../config/datasetPresets';
 import MappingStep, { type FieldMappingValue, autoInferMapping } from './MappingStep';
@@ -32,8 +32,11 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     const [importing, setImporting] = useState(false);
 
     // Dataset info
-    const [dataset, setDataset] = useState<any>(null);
-    const [loadingDataset, setLoadingDataset] = useState(false);
+    const useFetchDatasetDetail = useEvalStore((s) => s.useFetchDatasetDetail);
+    const dataset = useEvalStore((s) => s.datasetDetail);
+    const loadingDataset = useEvalStore((s) => s.isLoadingDatasetDetail);
+
+    useFetchDatasetDetail(open && datasetId ? datasetId : undefined);
 
     // Upload result
     const [pathname, setPathname] = useState('');
@@ -48,24 +51,6 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     // Mapping state
     const [mapping, setMapping] = useState<Record<string, MappingTarget>>({});
     const [delimiter, setDelimiter] = useState('');
-
-    // Fetch dataset info to get preset
-    useEffect(() => {
-      if (open && datasetId) {
-        setLoadingDataset(true);
-        lambdaClient.agentEval.getDataset
-          .query({ id: datasetId })
-          .then((data) => {
-            setDataset(data);
-          })
-          .catch(() => {
-            message.error('Failed to load dataset info');
-          })
-          .finally(() => {
-            setLoadingDataset(false);
-          });
-      }
-    }, [open, datasetId, message]);
 
     const preset = getPresetById(dataset?.metadata?.preset);
 
@@ -101,8 +86,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
           setFilename(file.name);
 
           // 2. Parse the file on server
-          const result = await lambdaClient.agentEval.parseDatasetFile.mutate({
-            filename: file.name,
+          const result = await agentEvalService.parseDatasetFile({
             pathname: metadata.path,
           });
 
@@ -158,12 +142,16 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
 
       setImporting(true);
       try {
-        const result = await lambdaClient.agentEval.importDataset.mutate({
+        const result = await agentEvalService.importDataset({
           datasetId,
-          fieldMapping,
-          filename,
-          format: format as any,
           pathname,
+          input: fieldMapping.input,
+          expected: fieldMapping.expected,
+          expectedDelimiter: fieldMapping.expectedDelimiter,
+          choices: fieldMapping.choices,
+          context: fieldMapping.context,
+          sortOrder: fieldMapping.sortOrder,
+          metadata: fieldMapping.metadata ? JSON.stringify(fieldMapping.metadata) : undefined,
         });
         message.success(t('dataset.import.success', { count: result.count }));
         handleClose();

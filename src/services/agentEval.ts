@@ -1,0 +1,155 @@
+import { lambdaClient } from '@/libs/trpc/client';
+
+class AgentEvalService {
+  // ============ Benchmark ============
+  async listBenchmarks() {
+    return lambdaClient.agentEval.listBenchmarks.query();
+  }
+
+  async getBenchmark(id: string) {
+    return lambdaClient.agentEval.getBenchmark.query({ id });
+  }
+
+  async createBenchmark(params: {
+    description?: string;
+    identifier: string;
+    metadata?: Record<string, unknown>;
+    name: string;
+    rubrics?: any[];
+    tags?: string[];
+  }) {
+    return lambdaClient.agentEval.createBenchmark.mutate(params);
+  }
+
+  async updateBenchmark(params: {
+    description?: string;
+    id: string;
+    identifier: string;
+    metadata?: Record<string, unknown>;
+    name: string;
+    tags?: string[];
+  }) {
+    return lambdaClient.agentEval.updateBenchmark.mutate(params);
+  }
+
+  async deleteBenchmark(id: string) {
+    return lambdaClient.agentEval.deleteBenchmark.mutate({ id });
+  }
+
+  // ============ Dataset ============
+  async listDatasets(benchmarkId: string) {
+    return lambdaClient.agentEval.listDatasets.query({ benchmarkId });
+  }
+
+  async getDataset(id: string) {
+    return lambdaClient.agentEval.getDataset.query({ id });
+  }
+
+  async createDataset(params: {
+    benchmarkId: string;
+    description?: string;
+    identifier: string;
+    metadata?: Record<string, unknown>;
+    name: string;
+  }) {
+    return lambdaClient.agentEval.createDataset.mutate(params);
+  }
+
+  async updateDataset(params: {
+    description?: string;
+    id: string;
+    name: string;
+  }) {
+    return lambdaClient.agentEval.updateDataset.mutate(params);
+  }
+
+  async deleteDataset(id: string) {
+    return lambdaClient.agentEval.deleteDataset.mutate({ id });
+  }
+
+  async parseDatasetFile(params: { pathname: string }) {
+    return lambdaClient.agentEval.parseDatasetFile.mutate(params);
+  }
+
+  async importDataset(params: {
+    choices?: string;
+    context?: string;
+    datasetId: string;
+    expected?: string;
+    expectedDelimiter?: string;
+    input: string;
+    metadata?: string;
+    pathname: string;
+    sortOrder?: string;
+  }) {
+    return lambdaClient.agentEval.importDataset.mutate(params);
+  }
+
+  // ============ Test Case ============
+  async listTestCases(params: {
+    datasetId: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    return lambdaClient.agentEval.listTestCases.query(params);
+  }
+
+  async createTestCase(params: {
+    content: {
+      choices?: string[];
+      context?: string;
+      expectedOutput?: string;
+      input: string;
+    };
+    datasetId: string;
+    metadata?: {
+      difficulty?: 'easy' | 'medium' | 'hard';
+      tags?: string[];
+    };
+  }) {
+    return lambdaClient.agentEval.createTestCase.mutate(params);
+  }
+
+  // ============ Run ============
+  async listRuns(datasetId: string) {
+    return lambdaClient.agentEval.listRuns.query({ datasetId });
+  }
+
+  async getRunDetails(id: string) {
+    return lambdaClient.agentEval.getRunDetails.query({ id });
+  }
+
+  async getRunResults(id: string) {
+    return lambdaClient.agentEval.getRunResults.query({ id });
+  }
+
+  async createRun(params: {
+    agentId: string;
+    benchmarkId?: string;
+    config?: {
+      concurrency?: number;
+      judgeModel?: string;
+      temperature?: number;
+      timeout?: number;
+    };
+    datasetIds: string[];
+    description?: string;
+    name?: string;
+  }) {
+    return lambdaClient.agentEval.createRun.mutate(params);
+  }
+
+  async startRun(id: string, force?: boolean) {
+    return lambdaClient.agentEval.startRun.mutate({ force, id });
+  }
+
+  async abortRun(id: string) {
+    return lambdaClient.agentEval.abortRun.mutate({ id });
+  }
+
+  async deleteRun(id: string) {
+    return lambdaClient.agentEval.deleteRun.mutate({ id });
+  }
+}
+
+export const agentEvalService = new AgentEvalService();

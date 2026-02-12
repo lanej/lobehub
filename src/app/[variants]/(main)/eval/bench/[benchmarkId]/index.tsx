@@ -114,8 +114,6 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 const BenchmarkDetail = memo(() => {
   const { t } = useTranslation('eval');
   const { benchmarkId } = useParams<{ benchmarkId: string }>();
-  const [benchmark, setBenchmark] = useState<any>(null);
-  const [datasets, setDatasets] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'datasets' | 'runs'>('datasets');
   const [importOpen, setImportOpen] = useState(false);
 
@@ -124,26 +122,22 @@ const BenchmarkDetail = memo(() => {
     [benchmarkId],
   );
 
-  const refreshBenchmark = useCallback(() => {
-    if (!benchmarkId) return;
-    lambdaClient.agentEval.getBenchmark.query({ id: benchmarkId }).then(setBenchmark);
-  }, [benchmarkId]);
-
-  const refreshDatasets = useCallback(() => {
-    if (!benchmarkId) return;
-    lambdaClient.agentEval.listDatasets.query({ benchmarkId }).then((result) => {
-      setDatasets(result);
-    });
-  }, [benchmarkId]);
-
-  useEffect(() => {
-    if (!benchmarkId) return;
-    refreshBenchmark();
-    refreshDatasets();
-  }, [benchmarkId, refreshBenchmark, refreshDatasets]);
-
+  const useFetchBenchmarkDetail = useEvalStore((s) => s.useFetchBenchmarkDetail);
+  const benchmark = useEvalStore((s) => s.benchmarkDetail);
+  const useFetchDatasets = useEvalStore((s) => s.useFetchDatasets);
+  const datasets = useEvalStore((s) => s.datasetList);
+  const refreshDatasets = useEvalStore((s) => s.refreshDatasets);
   const useFetchRuns = useEvalStore((s) => s.useFetchRuns);
   const runList = useEvalStore((s) => s.runList);
+
+  useFetchBenchmarkDetail(benchmarkId);
+  useFetchDatasets(benchmarkId);
+
+  const handleRefreshDatasets = useCallback(async () => {
+    if (benchmarkId) {
+      await refreshDatasets(benchmarkId);
+    }
+  }, [benchmarkId, refreshDatasets]);
   // Fetch all runs for this benchmark (pass undefined to get all)
   useFetchRuns(undefined);
 
@@ -155,12 +149,21 @@ const BenchmarkDetail = memo(() => {
 
   const totalCases = datasets.reduce((sum, ds) => sum + (ds.testCaseCount || 0), 0);
 
+  const handleBenchmarkUpdate = useCallback(
+    async (updatedBenchmark: any) => {
+      if (benchmarkId) {
+        await refreshDatasets(benchmarkId);
+      }
+    },
+    [benchmarkId, refreshDatasets],
+  );
+
   return (
     <Flexbox className={styles.container} gap={24} height="100%" width="100%">
       {/* Header */}
       <BenchmarkHeader
         benchmark={benchmark}
-        onRefresh={refreshBenchmark}
+        onBenchmarkUpdate={handleBenchmarkUpdate}
         systemIcon={systemIcon}
       />
 
@@ -386,7 +389,7 @@ const BenchmarkDetail = memo(() => {
           benchmarkId={benchmarkId!}
           datasets={datasets}
           onImport={() => setImportOpen(true)}
-          onRefresh={refreshDatasets}
+          onRefresh={handleRefreshDatasets}
         />
       ) : (
         <RunsTab benchmarkId={benchmarkId!} />
@@ -395,7 +398,7 @@ const BenchmarkDetail = memo(() => {
       <DatasetImportModal
         benchmarkId={benchmarkId!}
         onClose={() => setImportOpen(false)}
-        onSuccess={refreshDatasets}
+        onSuccess={handleRefreshDatasets}
         open={importOpen}
       />
     </Flexbox>

@@ -1,10 +1,10 @@
 'use client';
 
-import { Center, Flexbox, Icon } from '@lobehub/ui';
-import { Alert, Upload } from 'antd';
+import { Center, Flexbox, Icon, Tag } from '@lobehub/ui';
+import { Divider, Upload } from 'antd';
 import { cssVar } from 'antd-style';
 import { FileUp } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { type DatasetPreset } from '../../config/datasetPresets';
@@ -17,51 +17,97 @@ interface UploadStepProps {
   preset?: DatasetPreset;
 }
 
+type FieldRole = 'input' | 'expected' | 'choices' | 'context';
+
+const getFieldRole = (fieldName: string, fieldInference: DatasetPreset['fieldInference']): FieldRole | undefined => {
+  for (const role of ['input', 'expected', 'choices', 'context'] as FieldRole[]) {
+    if (fieldInference[role].some((f) => f.toLowerCase() === fieldName.toLowerCase())) {
+      return role;
+    }
+  }
+};
+
 const UploadStep = memo<UploadStepProps>(({ onFileSelect, loading, preset }) => {
   const { t } = useTranslation('eval');
+
+  const fields = useMemo(() => {
+    if (!preset) return [];
+
+    const required = preset.requiredFields.map((name) => ({
+      name,
+      required: true,
+      role: getFieldRole(name, preset.fieldInference),
+    }));
+
+    const optional = preset.optionalFields.map((name) => ({
+      name,
+      required: false,
+      role: getFieldRole(name, preset.fieldInference),
+    }));
+
+    return [...required, ...optional];
+  }, [preset]);
 
   return (
     <Flexbox gap={16}>
       {preset && (
-        <Alert
-          message={
-            <Flexbox gap={8}>
-              <Flexbox horizontal align="center" gap={8}>
-                <Center
-                  flex="none"
-                  height={32}
-                  width={32}
-                  style={{
-                    border: `1px solid ${cssVar.colorFillTertiary}`,
-                    borderRadius: cssVar.borderRadius,
-                    background: cssVar.colorBgElevated,
-                  }}
-                >
-                  <Icon icon={preset.icon} />
-                </Center>
-                <Flexbox flex={1}>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{preset.name}</div>
-                  <div style={{ fontSize: 12, color: cssVar.colorTextSecondary }}>
-                    {preset.description}
-                  </div>
-                </Flexbox>
-              </Flexbox>
-              <div style={{ fontSize: 12, color: cssVar.colorTextDescription }}>
-                {preset.formatDescription}
-              </div>
-              <div style={{ fontSize: 12, color: cssVar.colorTextTertiary }}>
-                <strong>Required:</strong> {preset.requiredFields.join(', ')}
-                {preset.optionalFields.length > 0 && (
-                  <>
-                    {' · '}
-                    <strong>Optional:</strong> {preset.optionalFields.join(', ')}
-                  </>
-                )}
+        <div
+          style={{
+            border: `1px solid ${cssVar.colorFillTertiary}`,
+            borderRadius: cssVar.borderRadiusLG,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header */}
+          <Flexbox horizontal align="center" gap={8} padding={12}>
+            <Center
+              flex="none"
+              height={36}
+              width={36}
+              style={{
+                border: `1px solid ${cssVar.colorFillTertiary}`,
+                borderRadius: cssVar.borderRadius,
+                background: cssVar.colorBgElevated,
+              }}
+            >
+              <Icon icon={preset.icon} />
+            </Center>
+            <Flexbox flex={1}>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>{preset.name}</div>
+              <div style={{ color: cssVar.colorTextSecondary, fontSize: 12 }}>
+                {preset.description}
               </div>
             </Flexbox>
-          }
-          type="info"
-        />
+          </Flexbox>
+
+          <Divider style={{ margin: 0 }} />
+
+          {/* Body */}
+          <Flexbox gap={12} padding={12}>
+            {preset.formatDescription && (
+              <div style={{ color: cssVar.colorTextDescription, fontSize: 12 }}>
+                {preset.formatDescription}
+              </div>
+            )}
+
+            {/* Fields */}
+            <Flexbox gap={8} horizontal style={{ flexWrap: 'wrap' }}>
+              {fields.map((field) => (
+                <Flexbox align="center" gap={2} key={field.name}>
+                  <Tag color={field.required ? 'blue' : undefined}>
+                    {field.name}
+                    {field.required && ' *'}
+                  </Tag>
+                  {field.role && (
+                    <div style={{ color: cssVar.colorTextTertiary, fontSize: 10 }}>
+                      {field.role}
+                    </div>
+                  )}
+                </Flexbox>
+              ))}
+            </Flexbox>
+          </Flexbox>
+        </div>
       )}
 
       <Dragger

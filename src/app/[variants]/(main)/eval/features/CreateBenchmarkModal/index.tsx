@@ -51,13 +51,11 @@ const CreateBenchmarkModal = memo<CreateBenchmarkModalProps>(({ open, onCancel }
           const values = await form.validateFields();
           setLoading(true);
 
-          const tags = values.tags?.length > 0 ? values.tags : undefined;
-
           const result = await createBenchmark({
             identifier: values.identifier.trim(),
-            metadata: tags ? { tags } : undefined,
             name: values.name.trim(),
             description: values.description?.trim() || undefined,
+            tags: values.tags?.length > 0 ? values.tags : undefined,
           });
           message.success(t('benchmark.create.success'));
           form.resetFields();

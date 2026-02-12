@@ -1,17 +1,20 @@
 'use client';
 
 import { Button, Empty, Flexbox, Input } from '@lobehub/ui';
-import { App, Badge, Card, Modal, Table } from 'antd';
+import { App, Badge, Card, Dropdown, Modal, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { createStaticStyles } from 'antd-style';
-import { ChevronRight, Database, Eye, FileUp, Plus, Search } from 'lucide-react';
+import { createStaticStyles, cssVar } from 'antd-style';
+import { ChevronRight, Database, Ellipsis, Eye, FileUp, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import NeuralNetworkLoading from '@/components/NeuralNetworkLoading';
-import { lambdaClient } from '@/libs/trpc/client';
+import { agentEvalService } from '@/services/agentEval';
+import { useEvalStore } from '@/store/eval';
 
+import { DATASET_PRESETS } from '../../../../config/datasetPresets';
 import DatasetCreateModal from '../../../../features/DatasetCreateModal';
+import DatasetEditModal from '../../../../features/DatasetEditModal';
 import DatasetImportModal from '../../../../features/DatasetImportModal';
 import TestCaseCreateModal from '../../../../features/TestCaseCreateModal';
 
@@ -147,47 +150,41 @@ interface DatasetsTabProps {
 
 const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, onRefresh }) => {
   const { t } = useTranslation('eval');
-  const { modal } = App.useApp();
+  const { modal, message } = App.useApp();
   const [expandedDs, setExpandedDs] = useState<string | null>(null);
-  const [testCases, setTestCases] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [total, setTotal] = useState(0);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 6 });
   const [search, setSearch] = useState('');
   const [diffFilter, setDiffFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
   const [previewCase, setPreviewCase] = useState<any | null>(null);
 
-  // Create and Import modals
+  // Create, Edit, and Import modals
   const [createOpen, setCreateOpen] = useState(false);
+  const [editDataset, setEditDataset] = useState<any | null>(null);
   const [importDatasetId, setImportDatasetId] = useState<string | null>(null);
   const [addCaseDatasetId, setAddCaseDatasetId] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const refreshTestCases = useCallback(() => {
-    setRefreshKey((k) => k + 1);
-    onRefresh();
-  }, [onRefresh]);
+  const useFetchTestCases = useEvalStore((s) => s.useFetchTestCases);
+  const testCases = useEvalStore((s) => s.testCaseList);
+  const total = useEvalStore((s) => s.testCaseTotal);
+  const loading = useEvalStore((s) => s.isLoadingTestCases);
+  const refreshTestCases = useEvalStore((s) => s.refreshTestCases);
 
-  useEffect(() => {
-    if (!expandedDs) return;
-
-    const fetchCases = async () => {
-      setLoading(true);
-      try {
-        const result = await lambdaClient.agentEval.listTestCases.query({
+  useFetchTestCases(
+    expandedDs
+      ? {
           datasetId: expandedDs,
           limit: pagination.pageSize,
           offset: (pagination.current - 1) * pagination.pageSize,
-        });
-        setTestCases(result.data);
-        setTotal(result.total);
-      } finally {
-        setLoading(false);
-      }
-    };
+        }
+      : { datasetId: '', limit: 0, offset: 0 },
+  );
 
-    fetchCases();
-  }, [expandedDs, pagination.current, pagination.pageSize, refreshKey]);
+  const handleRefreshTestCases = useCallback(async () => {
+    if (expandedDs) {
+      await refreshTestCases(expandedDs);
+    }
+    onRefresh();
+  }, [expandedDs, refreshTestCases, onRefresh]);
 
   const filteredCases = testCases.filter((c) => {
     if (diffFilter !== 'all' && c.metadata?.difficulty !== diffFilter) return false;
@@ -392,16 +389,30 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                       <Database size={16} style={{ color: 'var(--ant-color-primary)' }} />
                     </div>
                     <Flexbox flex={1} gap={2} style={{ minWidth: 0 }}>
-                      <p
-                        style={{
-                          color: 'var(--ant-color-text)',
-                          fontSize: 14,
-                          fontWeight: 500,
-                          margin: 0,
-                        }}
-                      >
-                        {ds.name}
-                      </p>
+                      <Flexbox align="center" gap={8} horizontal>
+                        <p
+                          style={{
+                            color: 'var(--ant-color-text)',
+                            fontSize: 14,
+                            fontWeight: 500,
+                            margin: 0,
+                          }}
+                        >
+                          {ds.name}
+                        </p>
+                        {ds.metadata?.preset && DATASET_PRESETS[ds.metadata.preset] && (
+                          <Badge
+                            style={{
+                              backgroundColor: cssVar.colorPrimaryBg,
+                              borderColor: cssVar.colorPrimaryBorder,
+                              color: cssVar.colorPrimary,
+                              fontSize: 11,
+                            }}
+                          >
+                            {DATASET_PRESETS[ds.metadata.preset].name}
+                          </Badge>
+                        )}
+                      </Flexbox>
                       {ds.description && (
                         <p
                           style={{
@@ -425,6 +436,56 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                     >
                       {ds.testCaseCount || 0} {t('benchmark.detail.stats.cases').toLowerCase()}
                     </span>
+                    <Dropdown
+                      menu={{
+                        items: [
+                          {
+                            icon: <Pencil size={14} />,
+                            key: 'edit',
+                            label: t('common.edit'),
+                            onClick: () => setEditDataset(ds),
+                          },
+                          { type: 'divider' },
+                          {
+                            danger: true,
+                            icon: <Trash2 size={14} />,
+                            key: 'delete',
+                            label: t('common.delete'),
+                            onClick: () => {
+                              modal.confirm({
+                                content: t('dataset.delete.confirm'),
+                                okButtonProps: { danger: true },
+                                okText: t('common.delete'),
+                                onOk: async () => {
+                                  try {
+                                    await agentEvalService.deleteDataset(ds.id);
+                                    message.success(t('dataset.delete.success'));
+                                    onRefresh();
+                                  } catch {
+                                    message.error(t('dataset.delete.error'));
+                                  }
+                                },
+                                title: t('common.delete'),
+                              });
+                            },
+                          },
+                        ],
+                      }}
+                      trigger={['click']}
+                    >
+                      <Button
+                        icon={Ellipsis}
+                        onClick={(e) => e.stopPropagation()}
+                        size="small"
+                        style={{
+                          color: cssVar.colorTextTertiary,
+                          height: 28,
+                          padding: 0,
+                          width: 28,
+                        }}
+                        variant="text"
+                      />
+                    </Dropdown>
                     <ChevronRight
                       size={16}
                       style={{
@@ -479,19 +540,19 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                           </p>
                           <Flexbox gap={8} horizontal style={{ marginTop: 8 }}>
                             <Button
-                              icon={FileUp}
-                              onClick={() => setImportDatasetId(ds.id)}
-                              size="small"
-                            >
-                              {t('testCase.actions.import')}
-                            </Button>
-                            <Button
                               icon={Plus}
                               onClick={() => setAddCaseDatasetId(ds.id)}
                               size="small"
-                              type="primary"
                             >
                               {t('testCase.actions.add')}
+                            </Button>
+                            <Button
+                              icon={FileUp}
+                              onClick={() => setImportDatasetId(ds.id)}
+                              size="small"
+                              type="primary"
+                            >
+                              {t('testCase.actions.import')}
                             </Button>
                           </Flexbox>
                         </Flexbox>
@@ -543,19 +604,19 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                             </Flexbox>
                             <Flexbox gap={8} horizontal>
                               <Button
-                                icon={FileUp}
-                                onClick={() => setImportDatasetId(ds.id)}
-                                size="small"
-                              >
-                                {t('testCase.actions.import')}
-                              </Button>
-                              <Button
                                 icon={Plus}
                                 onClick={() => setAddCaseDatasetId(ds.id)}
                                 size="small"
-                                type="primary"
                               >
                                 {t('testCase.actions.add')}
+                              </Button>
+                              <Button
+                                icon={FileUp}
+                                onClick={() => setImportDatasetId(ds.id)}
+                                size="small"
+                                type="primary"
+                              >
+                                {t('testCase.actions.import')}
                               </Button>
                             </Flexbox>
                           </div>
@@ -667,6 +728,16 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
         )}
       </Modal>
 
+      {/* Edit Dataset Modal */}
+      {editDataset && (
+        <DatasetEditModal
+          dataset={editDataset}
+          onCancel={() => setEditDataset(null)}
+          onSuccess={onRefresh}
+          open={!!editDataset}
+        />
+      )}
+
       {/* Create Dataset Modal */}
       <DatasetCreateModal
         benchmarkId={benchmarkId}
@@ -692,7 +763,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       <DatasetImportModal
         datasetId={importDatasetId!}
         onClose={() => setImportDatasetId(null)}
-        onSuccess={refreshTestCases}
+        onSuccess={handleRefreshTestCases}
         open={!!importDatasetId}
       />
 
@@ -700,7 +771,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       <TestCaseCreateModal
         datasetId={addCaseDatasetId!}
         onClose={() => setAddCaseDatasetId(null)}
-        onSuccess={refreshTestCases}
+        onSuccess={handleRefreshTestCases}
         open={!!addCaseDatasetId}
       />
     </>
