@@ -602,6 +602,13 @@
       "when": 1770632176750,
       "tag": "0085_remove_id_unique_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1770866533887,
+      "tag": "0086_generation_topics_add_type_column",
+      "breakpoints": true
     }
   ],
   "version": "6"

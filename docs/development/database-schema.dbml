@@ -479,6 +479,7 @@ table generation_topics {
   user_id text [not null]
   title text
   cover_url text
+  type varchar(32) [not null, default: 'image']
   accessed_at "timestamp with time zone" [not null, default: `now()`]
   created_at "timestamp with time zone" [not null, default: `now()`]
   updated_at "timestamp with time zone" [not null, default: `now()`]
