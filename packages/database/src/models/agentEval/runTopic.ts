@@ -1,6 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 
-import { type NewAgentEvalRunTopic, agentEvalRunTopics } from '../../schemas';
+import {
+  type AgentEvalRunTopicItem,
+  type NewAgentEvalRunTopic,
+  agentEvalRunTopics,
+} from '../../schemas';
 import { LobeChatDatabase } from '../../type';
 
 export class AgentEvalRunTopicModel {
@@ -69,5 +73,23 @@ export class AgentEvalRunTopicModel {
         topic: true,
       },
     });
+  };
+
+  /**
+   * Update a RunTopic by composite key (runId + topicId)
+   */
+  updateByRunAndTopic = async (
+    runId: string,
+    topicId: string,
+    value: Pick<Partial<AgentEvalRunTopicItem>, 'evalResult' | 'passed' | 'score'>,
+  ) => {
+    const [result] = await this.db
+      .update(agentEvalRunTopics)
+      .set(value)
+      .where(
+        and(eq(agentEvalRunTopics.runId, runId), eq(agentEvalRunTopics.topicId, topicId)),
+      )
+      .returning();
+    return result;
   };
 }

@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import NavItem from '@/features/NavPanel/components/NavItem';
 import { usePathname } from '@/libs/router/navigation';
+import { useEvalStore } from '@/store/eval';
 
 import BenchmarkList from './BenchmarkList';
 
@@ -25,6 +26,8 @@ const Body = memo(() => {
   const activeKey = useActiveKey();
   const navigate = useNavigate();
   const { t } = useTranslation('eval');
+  const useFetchBenchmarks = useEvalStore((s) => s.useFetchBenchmarks);
+  useFetchBenchmarks();
 
   return (
     <Flexbox gap={8} paddingInline={4}>

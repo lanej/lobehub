@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
 import NavItem from '@/features/NavPanel/components/NavItem';
+import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import { useEvalStore } from '@/store/eval';
 
 const SYSTEM_ICONS = [LoaderPinwheel, Volleyball, Server, Target, Award, Trophy, Activity, BarChart3, TrendingUp, Gauge, Zap];
@@ -25,6 +26,7 @@ const BenchmarkList = memo<BenchmarkListProps>(({ activeKey, itemKey }) => {
   const { t } = useTranslation('eval');
   const navigate = useNavigate();
   const benchmarkList = useEvalStore((s) => s.benchmarkList);
+  const isInit = useEvalStore((s) => s.benchmarkListInit);
 
   return (
     <AccordionItem
@@ -45,7 +47,9 @@ const BenchmarkList = memo<BenchmarkListProps>(({ activeKey, itemKey }) => {
       }
     >
       <Flexbox gap={1} paddingBlock={1}>
-        {benchmarkList.length > 0 ? (
+        {!isInit ? (
+          <SkeletonList rows={3} />
+        ) : benchmarkList.length > 0 ? (
           benchmarkList.map((b: any) => (
             <Link
               key={b.id}

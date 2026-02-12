@@ -10,6 +10,9 @@ import { useTranslation } from 'react-i18next';
 
 import { lambdaClient } from '@/libs/trpc/client';
 
+import DatasetCreateModal from '../../../../features/DatasetCreateModal';
+import DatasetImportModal from '../../../../features/DatasetImportModal';
+
 const styles = createStaticStyles(({ css, cssVar }) => ({
   card: css`
     .ant-card-body {
@@ -142,6 +145,7 @@ interface DatasetsTabProps {
 
 const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, onRefresh }) => {
   const { t } = useTranslation('eval');
+  const { modal } = Modal;
   const [expandedDs, setExpandedDs] = useState<string | null>(null);
   const [testCases, setTestCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -150,6 +154,10 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
   const [search, setSearch] = useState('');
   const [diffFilter, setDiffFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
   const [previewCase, setPreviewCase] = useState<any | null>(null);
+
+  // Create and Import modals
+  const [createOpen, setCreateOpen] = useState(false);
+  const [importDatasetId, setImportDatasetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!expandedDs) return;
@@ -308,7 +316,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
           <p style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 14, margin: 0 }}>
             {t('benchmark.detail.datasetCount', { count: datasets.length })}
           </p>
-          <Button icon={Plus} onClick={onImport} size="small" type="primary">
+          <Button icon={Plus} onClick={() => setCreateOpen(true)} size="small" type="primary">
             {t('dataset.actions.addDataset')}
           </Button>
         </Flexbox>
@@ -346,12 +354,12 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
             >
               <Button
                 icon={Plus}
-                onClick={onImport}
+                onClick={() => setCreateOpen(true)}
                 size="small"
                 style={{ marginTop: 16 }}
                 type="primary"
               >
-                {t('dataset.actions.importDataset')}
+                {t('dataset.actions.addDataset')}
               </Button>
             </Empty>
           </Card>
@@ -570,6 +578,34 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
           </Flexbox>
         )}
       </Modal>
+
+      {/* Create Dataset Modal */}
+      <DatasetCreateModal
+        benchmarkId={benchmarkId}
+        onClose={() => setCreateOpen(false)}
+        onSuccess={(dataset) => {
+          onRefresh();
+          // Ask if user wants to import data immediately
+          modal.confirm({
+            cancelText: t('common.later'),
+            content: t('dataset.create.importNow'),
+            okText: t('dataset.actions.import'),
+            onOk: () => {
+              setImportDatasetId(dataset.id);
+            },
+            title: t('dataset.create.successTitle'),
+          });
+        }}
+        open={createOpen}
+      />
+
+      {/* Import Dataset Modal */}
+      <DatasetImportModal
+        datasetId={importDatasetId!}
+        onClose={() => setImportDatasetId(null)}
+        onSuccess={onRefresh}
+        open={!!importDatasetId}
+      />
     </>
   );
 });

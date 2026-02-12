@@ -3,6 +3,7 @@ import type {
   EvalBenchmarkRubric,
   EvalRunConfig,
   EvalRunMetrics,
+  EvalRunTopicResult,
   EvalTestCaseContent,
   EvalTestCaseMetadata,
 } from '@lobechat/types';
@@ -13,6 +14,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -184,6 +186,10 @@ export const agentEvalRunTopics = pgTable(
     testCaseId: text('test_case_id')
       .references(() => agentEvalTestCases.id, { onDelete: 'cascade' })
       .notNull(),
+
+    score: real('score'),
+    passed: boolean('passed'),
+    evalResult: jsonb('eval_result').$type<EvalRunTopicResult>(),
 
     createdAt: createdAt(),
   },

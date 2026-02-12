@@ -357,6 +357,47 @@ describe('AgentEvalRunTopicModel', () => {
     });
   });
 
+  describe('updateByRunAndTopic', () => {
+    beforeEach(async () => {
+      await serverDB.insert(agentEvalRunTopics).values({
+        runId,
+        topicId: topicId1,
+        testCaseId: testCaseId1,
+      });
+    });
+
+    it('should update score and passed fields', async () => {
+      const result = await runTopicModel.updateByRunAndTopic(runId, topicId1, {
+        score: 0.85,
+        passed: true,
+        evalResult: {
+          rubricScores: [{ rubricId: 'r1', score: 0.85 }],
+        },
+      });
+
+      expect(result.score).toBe(0.85);
+      expect(result.passed).toBe(true);
+      expect(result.evalResult).toEqual({
+        rubricScores: [{ rubricId: 'r1', score: 0.85 }],
+      });
+    });
+
+    it('should update only specified fields', async () => {
+      await runTopicModel.updateByRunAndTopic(runId, topicId1, {
+        score: 0,
+        passed: false,
+      });
+
+      const updated = await serverDB.query.agentEvalRunTopics.findFirst({
+        where: eq(agentEvalRunTopics.topicId, topicId1),
+      });
+
+      expect(updated?.score).toBe(0);
+      expect(updated?.passed).toBe(false);
+      expect(updated?.evalResult).toBeNull();
+    });
+  });
+
   describe('cascade deletion', () => {
     beforeEach(async () => {
       await serverDB.insert(agentEvalRunTopics).values({

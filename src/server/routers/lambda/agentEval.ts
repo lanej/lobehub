@@ -1,6 +1,6 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix  */
 import { TRPCError } from '@trpc/server';
-import { parseDataset } from '@lobechat/dataset-parser';
+import { parseDataset } from '@lobechat/eval-dataset-parser';
 import { z } from 'zod';
 
 import {
@@ -608,8 +608,11 @@ export const agentEvalRouter = router({
         ...run,
         dataset,
         topics: runTopics.map((rt) => ({
-          topic: rt.topic,
+          evalResult: rt.evalResult,
+          passed: rt.passed,
+          score: rt.score,
           testCase: rt.testCase,
+          topic: rt.topic,
         })),
       };
     }),
@@ -753,20 +756,31 @@ export const agentEvalRouter = router({
       }
 
       // Get all run topics with test cases and topics
-      const runTopics = await ctx.runTopicModel.findByRunId(input.id);
+      const allRunTopics = await ctx.runTopicModel.findByRunId(input.id);
 
-      // TODO: Implement filtering by status (passed/failed) once we have evaluation results
-      // TODO: Implement pagination with limit/offset
+      // Filter by status
+      const filtered = input.status === 'all' || !input.status
+        ? allRunTopics
+        : allRunTopics.filter((rt) =>
+          input.status === 'passed' ? rt.passed === true : rt.passed === false,
+        );
+
+      // Pagination
+      const offset = input.offset ?? 0;
+      const limit = input.limit ?? 50;
+      const paginated = filtered.slice(offset, offset + limit);
 
       return {
         runId: input.id,
-        total: runTopics.length,
-        results: runTopics.map((rt) => ({
-          testCaseId: rt.testCaseId,
-          topicId: rt.topicId,
+        total: filtered.length,
+        results: paginated.map((rt) => ({
+          evalResult: rt.evalResult,
+          passed: rt.passed,
+          score: rt.score,
           testCase: rt.testCase,
+          testCaseId: rt.testCaseId,
           topic: rt.topic,
-          // TODO: Add evaluation result and score once LOBE-4926 is implemented
+          topicId: rt.topicId,
         })),
       };
     }),

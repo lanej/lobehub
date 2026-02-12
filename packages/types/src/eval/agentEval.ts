@@ -100,6 +100,15 @@ export interface EvalRubricScore {
 }
 
 /**
+ * Evaluation result stored on RunTopic after scoring
+ */
+export interface EvalRunTopicResult {
+  error?: string;
+  extractedAnswer?: string;
+  rubricScores: EvalRubricScore[];
+}
+
+/**
  * Evaluation thread metadata extension
  */
 export interface EvalThreadMetadata {
