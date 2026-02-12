@@ -1,5 +1,9 @@
 import { type CreateVideoState, initialCreateVideoState } from './slices/createVideo/initialState';
 import {
+  type GenerationBatchState,
+  initialGenerationBatchState,
+} from './slices/generationBatch/initialState';
+import {
   type VideoGenerationConfigState,
   initialGenerationConfigState,
 } from './slices/generationConfig/initialState';
@@ -8,10 +12,14 @@ import {
   initialGenerationTopicState,
 } from './slices/generationTopic/initialState';
 
-export type VideoStoreState = VideoGenerationConfigState & GenerationTopicState & CreateVideoState;
+export type VideoStoreState = VideoGenerationConfigState &
+  GenerationTopicState &
+  GenerationBatchState &
+  CreateVideoState;
 
 export const initialState: VideoStoreState = {
   ...initialGenerationConfigState,
   ...initialGenerationTopicState,
+  ...initialGenerationBatchState,
   ...initialCreateVideoState,
 };

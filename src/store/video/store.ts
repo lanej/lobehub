@@ -7,6 +7,10 @@ import { createDevtools } from '../middleware/createDevtools';
 import { type VideoStoreState, initialState } from './initialState';
 import { type CreateVideoAction, createCreateVideoSlice } from './slices/createVideo/action';
 import {
+  type GenerationBatchAction,
+  createGenerationBatchSlice,
+} from './slices/generationBatch/action';
+import {
   type GenerationConfigAction,
   createGenerationConfigSlice,
 } from './slices/generationConfig/action';
@@ -18,12 +22,18 @@ import {
 //  ===============  aggregate createStoreFn ============ //
 
 export interface VideoStore
-  extends GenerationConfigAction, GenerationTopicAction, CreateVideoAction, VideoStoreState {}
+  extends
+    GenerationConfigAction,
+    GenerationTopicAction,
+    GenerationBatchAction,
+    CreateVideoAction,
+    VideoStoreState {}
 
 const createStore: StateCreator<VideoStore, [['zustand/devtools', never]]> = (...parameters) => ({
   ...initialState,
   ...createGenerationConfigSlice(...parameters),
   ...createGenerationTopicSlice(...parameters),
+  ...createGenerationBatchSlice(...parameters),
   ...createCreateVideoSlice(...parameters),
 });
 

@@ -30,7 +30,7 @@ export const createCreateVideoSlice: StateCreator<
     const provider = videoGenerationConfigSelectors.provider(store);
     const model = videoGenerationConfigSelectors.model(store);
     const activeGenerationTopicId = generationTopicSelectors.activeGenerationTopicId(store);
-    const { createGenerationTopic, switchGenerationTopic } = store;
+    const { createGenerationTopic, switchGenerationTopic, setTopicBatchLoaded } = store;
 
     if (!parameters) {
       throw new TypeError('parameters is not initialized');
@@ -52,7 +52,10 @@ export const createCreateVideoSlice: StateCreator<
       const newGenerationTopicId = await createGenerationTopic(prompts);
       finalTopicId = newGenerationTopicId;
 
-      // 2. Switch to the new topic
+      // 2. Initialize empty batch array to avoid skeleton screen
+      setTopicBatchLoaded(newGenerationTopicId);
+
+      // 3. Switch to the new topic (now it has empty data, so no skeleton screen)
       switchGenerationTopic(newGenerationTopicId);
     }
 
@@ -74,7 +77,12 @@ export const createCreateVideoSlice: StateCreator<
         provider,
       });
 
-      // 5. Clear the prompt input after successful video creation
+      // 5. Refresh generation batches to show the new batch
+      if (!isNewTopic) {
+        await get().refreshGenerationBatches();
+      }
+
+      // 6. Clear the prompt input after successful video creation
       set(
         (state) => ({
           parameters: { ...state.parameters, prompt: '' },
@@ -83,7 +91,7 @@ export const createCreateVideoSlice: StateCreator<
         'createVideo/clearPrompt',
       );
     } finally {
-      // 6. Reset all creating states
+      // 7. Reset all creating states
       if (isNewTopic) {
         set(
           { isCreating: false, isCreatingWithNewTopic: false },
