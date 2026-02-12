@@ -24,7 +24,7 @@ const VideoLoadingItem = memo<VideoLoadingItemProps>(({ generation, aspectRatio 
       align={'center'}
       justify={'center'}
       style={{
-        aspectRatio: aspectRatio || '16/9',
+        aspectRatio: aspectRatio?.includes('/') ? aspectRatio : '16/9',
       }}
       variant={'filled'}
     >
