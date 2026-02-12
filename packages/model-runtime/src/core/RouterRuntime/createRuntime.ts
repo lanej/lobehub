@@ -464,7 +464,8 @@ export const createRouterRuntime = ({
     }
 
     async handleCreateVideoWebhook(payload: HandleCreateVideoWebhookPayload) {
-      const resolvedRouters = await this.resolveRouters();
+      const model = (payload.body as any)?.model;
+      const resolvedRouters = await this.resolveRouters(model);
       const routerOptions = this.normalizeRouterOptions(resolvedRouters[0]);
       const { runtime } = await this.createRuntimeFromOption(resolvedRouters[0], routerOptions[0]);
       return runtime.handleCreateVideoWebhook!(payload);

@@ -472,6 +472,9 @@
     "registry": "https://registry.npmjs.org"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "ffmpeg-static"
+    ],
     "overrides": {
       "@types/react": "19.2.13",
       "better-auth": "1.4.6",

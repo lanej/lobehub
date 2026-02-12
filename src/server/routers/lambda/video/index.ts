@@ -183,7 +183,8 @@ export const videoRouter = router({
     try {
       const modelRuntime = await initModelRuntimeFromDB(serverDB, userId, provider);
 
-      const callbackUrl = `${process.env.APP_URL}/api/webhooks/video/${provider}`;
+      const callbackBaseUrl = process.env.WEBHOOK_PROXY_URL || process.env.APP_URL;
+      const callbackUrl = `${callbackBaseUrl}/api/webhooks/video/${provider}`;
       log('Using callback URL: %s', callbackUrl);
 
       const response = await modelRuntime.createVideo({

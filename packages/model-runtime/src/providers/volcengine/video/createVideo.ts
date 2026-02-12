@@ -56,7 +56,7 @@ export async function createVolcengineVideo(
   if (cameraFixed !== undefined) body.camera_fixed = cameraFixed;
   if (payload.callbackUrl) body.callback_url = payload.callbackUrl;
 
-  log('Volcengine video API request body: %O', body);
+  log('Volcengine video API request body: %s', JSON.stringify(body, null, 2));
 
   const response = await fetch(`${baseURL}/contents/generations/tasks`, {
     body: JSON.stringify(body),
