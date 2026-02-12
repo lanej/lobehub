@@ -2,41 +2,42 @@
 
 import { Modal } from '@lobehub/ui';
 import { App } from 'antd';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { agentEvalService } from '@/services/agentEval';
 import { uploadService } from '@/services/upload';
-import { useEvalStore } from '@/store/eval';
 
 import { getPresetById } from '../../config/datasetPresets';
-import MappingStep, { type FieldMappingValue, autoInferMapping } from './MappingStep';
+import MappingStep, { autoInferMapping,type FieldMappingValue } from './MappingStep';
 import PreviewStep from './PreviewStep';
 import UploadStep from './UploadStep';
 
-type MappingTarget = 'choices' | 'context' | 'expected' | 'ignore' | 'input' | 'metadata' | 'sortOrder';
+type MappingTarget =
+  | 'choices'
+  | 'context'
+  | 'expected'
+  | 'ignore'
+  | 'input'
+  | 'metadata'
+  | 'sortOrder';
 
 interface DatasetImportModalProps {
   datasetId: string;
   onClose: () => void;
   onSuccess?: () => void;
   open: boolean;
+  presetId?: string;
 }
 
 const DatasetImportModal = memo<DatasetImportModalProps>(
-  ({ open, onClose, datasetId, onSuccess }) => {
+  ({ open, onClose, datasetId, onSuccess, presetId }) => {
     const { t } = useTranslation('eval');
     const { message } = App.useApp();
 
     const [step, setStep] = useState(0);
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
-
-    // Dataset info
-    const useFetchDatasetDetail = useEvalStore((s) => s.useFetchDatasetDetail);
-    const dataset = useEvalStore((s) => s.datasetDetail);
-    const loadingDataset = useEvalStore((s) => s.isLoadingDatasetDetail);
-
-    useFetchDatasetDetail(open && datasetId ? datasetId : undefined);
 
     // Upload result
     const [pathname, setPathname] = useState('');
@@ -52,7 +53,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     const [mapping, setMapping] = useState<Record<string, MappingTarget>>({});
     const [delimiter, setDelimiter] = useState('');
 
-    const preset = getPresetById(dataset?.metadata?.preset);
+    const preset = useMemo(() => (presetId ? getPresetById(presetId) : undefined), [presetId]);
 
     const reset = useCallback(() => {
       setStep(0);
@@ -107,7 +108,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
           setUploading(false);
         }
       },
-      [message, t],
+      [message, preset, t],
     );
 
     const buildFieldMapping = useCallback((): FieldMappingValue | null => {
@@ -161,50 +162,47 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
       } finally {
         setImporting(false);
       }
-    }, [buildFieldMapping, datasetId, filename, format, handleClose, message, onSuccess, pathname, t]);
+    }, [
+      buildFieldMapping,
+      datasetId,
+      filename,
+      format,
+      handleClose,
+      message,
+      onSuccess,
+      pathname,
+      t,
+    ]);
 
     const hasInputMapping = Object.values(mapping).includes('input');
 
     const fieldMapping = buildFieldMapping();
 
     const okText =
-      step === 0
-        ? undefined
-        : step === 1
-          ? t('dataset.import.next')
-          : t('dataset.import.confirm');
+      step === 0 ? undefined : step === 1 ? t('dataset.import.next') : t('dataset.import.confirm');
 
-    const onOk =
-      step === 0
-        ? undefined
-        : step === 1
-          ? () => setStep(2)
-          : handleImport;
+    const onOk = step === 0 ? undefined : step === 1 ? () => setStep(2) : handleImport;
 
     return (
       <Modal
         allowFullscreen
-        cancelText={step > 0 ? t('dataset.import.prev') : undefined}
         destroyOnHidden
+        cancelText={step > 0 ? t('dataset.import.prev') : undefined}
         footer={step === 0 ? null : undefined}
+        okText={okText}
+        open={open}
+        title={t('dataset.import.title')}
+        width={720}
         okButtonProps={{
           disabled: step === 1 && !hasInputMapping,
           loading: importing,
         }}
-        okText={okText}
         onCancel={step > 0 ? () => setStep(step - 1) : handleClose}
         onOk={onOk}
-        open={open}
-        title={t('dataset.import.title')}
-        width={720}
       >
         <div style={{ paddingBlock: 16 }}>
           {step === 0 && (
-            <UploadStep
-              loading={uploading || loadingDataset}
-              preset={preset}
-              onFileSelect={handleFileSelect}
-            />
+            <UploadStep loading={uploading} preset={preset} onFileSelect={handleFileSelect} />
           )}
 
           {step === 1 && (
@@ -212,18 +210,14 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
               delimiter={delimiter}
               headers={headers}
               mapping={mapping}
+              preview={preview}
               onDelimiterChange={setDelimiter}
               onMappingChange={setMapping}
-              preview={preview}
             />
           )}
 
           {step === 2 && fieldMapping && (
-            <PreviewStep
-              fieldMapping={fieldMapping}
-              preview={preview}
-              totalCount={totalCount}
-            />
+            <PreviewStep fieldMapping={fieldMapping} preview={preview} totalCount={totalCount} />
           )}
         </div>
       </Modal>

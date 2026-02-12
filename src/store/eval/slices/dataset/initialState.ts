@@ -1,13 +1,15 @@
+import  { type AgentEvalDataset, type AgentEvalDatasetListItem } from '@lobechat/types';
+
 export interface DatasetSliceState {
-  datasetDetail: any | null;
-  datasetList: any[];
-  isLoadingDatasetDetail: boolean;
+  datasetDetailMap: Record<string, AgentEvalDataset>;
+  datasetList: AgentEvalDatasetListItem[];
   isLoadingDatasets: boolean;
+  loadingDatasetDetailIds: string[];
 }
 
 export const datasetInitialState: DatasetSliceState = {
-  datasetDetail: null,
+  datasetDetailMap: {},
   datasetList: [],
-  isLoadingDatasetDetail: false,
   isLoadingDatasets: false,
+  loadingDatasetDetailIds: [],
 };

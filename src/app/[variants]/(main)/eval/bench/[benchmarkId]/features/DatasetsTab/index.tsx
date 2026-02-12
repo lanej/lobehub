@@ -1,11 +1,21 @@
 'use client';
 
-import { Button, Empty, Flexbox, Input } from '@lobehub/ui';
+import { Button, Empty, Flexbox, Input, Tag } from '@lobehub/ui';
 import { App, Badge, Card, Dropdown, Modal, Table } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
+import { type ColumnsType } from 'antd/es/table';
 import { createStaticStyles, cssVar } from 'antd-style';
-import { ChevronRight, Database, Ellipsis, Eye, FileUp, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import {
+  ChevronRight,
+  Database,
+  Ellipsis,
+  Eye,
+  FileUp,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import NeuralNetworkLoading from '@/components/NeuralNetworkLoading';
@@ -25,17 +35,20 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     }
   `,
   datasetHeader: css`
+    cursor: pointer;
+
     display: flex;
-    align-items: center;
     gap: 12px;
+    align-items: center;
+
     width: 100%;
     padding: 16px;
+    border: none;
 
-    text-align: left;
+    text-align: start;
 
     background: transparent;
-    border: none;
-    cursor: pointer;
+
     transition: background 0.2s;
 
     &:hover {
@@ -50,9 +63,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
     width: 32px;
     height: 32px;
+    border-radius: 8px;
 
     background: ${cssVar.colorPrimaryBg};
-    border-radius: 8px;
   `,
   emptyCard: css`
     .ant-card-body {
@@ -60,7 +73,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 64px 24px;
+
+      padding-block: 64px;
+      padding-inline: 24px;
     }
   `,
   emptyIcon: css`
@@ -70,24 +85,27 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
     width: 48px;
     height: 48px;
-    margin-bottom: 12px;
+    margin-block-end: 12px;
+    border-radius: 50%;
 
     background: ${cssVar.colorFillSecondary};
-    border-radius: 50%;
   `,
   expandedSection: css`
-    border-top: 1px solid ${cssVar.colorBorderSecondary};
+    border-block-start: 1px solid ${cssVar.colorBorderSecondary};
   `,
   filterButton: css`
-    padding: 4px 10px;
+    cursor: pointer;
+
+    padding-block: 4px;
+    padding-inline: 10px;
+    border: none;
 
     font-size: 11px;
     font-weight: 500;
     text-transform: capitalize;
 
     background: transparent;
-    border: none;
-    cursor: pointer;
+
     transition: all 0.2s;
 
     &[data-active='true'] {
@@ -104,12 +122,12 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     }
 
     &:not(:first-child) {
-      border-left: 1px solid ${cssVar.colorBorderSecondary};
+      border-inline-start: 1px solid ${cssVar.colorBorderSecondary};
     }
   `,
   filterContainer: css`
-    display: flex;
     overflow: hidden;
+    display: flex;
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: 6px;
   `,
@@ -117,9 +135,10 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
 
-    border-bottom: 1px solid ${cssVar.colorBorderSecondary};
+    padding-block: 12px;
+    padding-inline: 16px;
+    border-block-end: 1px solid ${cssVar.colorBorderSecondary};
   `,
   table: css`
     .ant-table {
@@ -274,7 +293,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       key: 'tags',
       render: (tags: string[]) =>
         tags?.length > 0 ? (
-          <Flexbox gap={4} horizontal>
+          <Flexbox horizontal gap={4}>
             {tags.slice(0, 1).map((tag) => (
               <Badge
                 key={tag}
@@ -300,15 +319,15 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       render: (_: any, record: any) => (
         <Button
           icon={Eye}
-          onClick={() => setPreviewCase(record)}
           size="small"
+          variant="text"
           style={{
             color: 'var(--ant-color-text-tertiary)',
             height: 28,
             padding: 0,
             width: 28,
           }}
-          variant="text"
+          onClick={() => setPreviewCase(record)}
         />
       ),
       width: 48,
@@ -318,11 +337,11 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
   return (
     <>
       <Flexbox gap={16}>
-        <Flexbox align="center" horizontal justify="space-between">
+        <Flexbox horizontal align="center" justify="space-between">
           <p style={{ color: 'var(--ant-color-text-tertiary)', fontSize: 14, margin: 0 }}>
             {t('benchmark.detail.datasetCount', { count: datasets.length })}
           </p>
-          <Button icon={Plus} onClick={() => setCreateOpen(true)} size="small" type="primary">
+          <Button icon={Plus} size="small" type="primary" onClick={() => setCreateOpen(true)}>
             {t('dataset.actions.addDataset')}
           </Button>
         </Flexbox>
@@ -333,6 +352,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
               <Database size={20} style={{ color: 'var(--ant-color-text-tertiary)' }} />
             </div>
             <Empty
+              icon={Database}
               description={
                 <Flexbox gap={4}>
                   <p
@@ -356,14 +376,13 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                   </p>
                 </Flexbox>
               }
-              icon={Database}
             >
               <Button
                 icon={Plus}
-                onClick={() => setCreateOpen(true)}
                 size="small"
                 style={{ marginTop: 16 }}
                 type="primary"
+                onClick={() => setCreateOpen(true)}
               >
                 {t('dataset.actions.addDataset')}
               </Button>
@@ -375,8 +394,8 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
               const isExpanded = expandedDs === ds.id;
 
               return (
-                <Card key={ds.id} className={styles.card}>
-                  <button
+                <Card className={styles.card} key={ds.id}>
+                  <div
                     className={styles.datasetHeader}
                     onClick={() => {
                       setExpandedDs(isExpanded ? null : ds.id);
@@ -389,7 +408,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                       <Database size={16} style={{ color: 'var(--ant-color-primary)' }} />
                     </div>
                     <Flexbox flex={1} gap={2} style={{ minWidth: 0 }}>
-                      <Flexbox align="center" gap={8} horizontal>
+                      <Flexbox horizontal align="center" gap={8}>
                         <p
                           style={{
                             color: 'var(--ant-color-text)',
@@ -401,16 +420,9 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                           {ds.name}
                         </p>
                         {ds.metadata?.preset && DATASET_PRESETS[ds.metadata.preset] && (
-                          <Badge
-                            style={{
-                              backgroundColor: cssVar.colorPrimaryBg,
-                              borderColor: cssVar.colorPrimaryBorder,
-                              color: cssVar.colorPrimary,
-                              fontSize: 11,
-                            }}
-                          >
+                          <Tag style={{ fontSize: 10 }}>
                             {DATASET_PRESETS[ds.metadata.preset].name}
-                          </Badge>
+                          </Tag>
                         )}
                       </Flexbox>
                       {ds.description && (
@@ -437,6 +449,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                       {ds.testCaseCount || 0} {t('benchmark.detail.stats.cases').toLowerCase()}
                     </span>
                     <Dropdown
+                      trigger={['click']}
                       menu={{
                         items: [
                           {
@@ -471,19 +484,18 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                           },
                         ],
                       }}
-                      trigger={['click']}
                     >
                       <Button
                         icon={Ellipsis}
-                        onClick={(e) => e.stopPropagation()}
                         size="small"
+                        variant="text"
                         style={{
                           color: cssVar.colorTextTertiary,
                           height: 28,
                           padding: 0,
                           width: 28,
                         }}
-                        variant="text"
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </Dropdown>
                     <ChevronRight
@@ -494,16 +506,12 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                         transition: 'transform 0.2s',
                       }}
                     />
-                  </button>
+                  </div>
 
                   {isExpanded && (
                     <div className={styles.expandedSection}>
                       {loading ? (
-                        <Flexbox
-                          align="center"
-                          justify="center"
-                          style={{ padding: '48px 24px' }}
-                        >
+                        <Flexbox align="center" justify="center" style={{ padding: '48px 24px' }}>
                           <NeuralNetworkLoading size={48} />
                         </Flexbox>
                       ) : total === 0 ? (
@@ -538,19 +546,19 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                           >
                             {t('testCase.empty.description')}
                           </p>
-                          <Flexbox gap={8} horizontal style={{ marginTop: 8 }}>
+                          <Flexbox horizontal gap={8} style={{ marginTop: 8 }}>
                             <Button
                               icon={Plus}
-                              onClick={() => setAddCaseDatasetId(ds.id)}
                               size="small"
+                              onClick={() => setAddCaseDatasetId(ds.id)}
                             >
                               {t('testCase.actions.add')}
                             </Button>
                             <Button
                               icon={FileUp}
-                              onClick={() => setImportDatasetId(ds.id)}
                               size="small"
                               type="primary"
+                              onClick={() => setImportDatasetId(ds.id)}
                             >
                               {t('testCase.actions.import')}
                             </Button>
@@ -559,7 +567,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                       ) : (
                         <>
                           <div className={styles.filtersRow}>
-                            <Flexbox align="center" gap={8} horizontal>
+                            <Flexbox horizontal align="center" gap={8}>
                               <div style={{ position: 'relative' }}>
                                 <Search
                                   size={14}
@@ -572,26 +580,26 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                                   }}
                                 />
                                 <Input
-                                  onChange={(e) => {
-                                    setSearch(e.target.value);
-                                    setPagination({ ...pagination, current: 1 });
-                                  }}
                                   placeholder={t('testCase.search.placeholder')}
                                   size="small"
+                                  value={search}
                                   style={{
                                     fontSize: 12,
                                     paddingLeft: 32,
                                     width: 192,
                                   }}
-                                  value={search}
+                                  onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPagination({ ...pagination, current: 1 });
+                                  }}
                                 />
                               </div>
                               <div className={styles.filterContainer}>
                                 {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
                                   <button
-                                    key={f}
                                     className={styles.filterButton}
                                     data-active={diffFilter === f}
+                                    key={f}
                                     onClick={() => {
                                       setDiffFilter(f);
                                       setPagination({ ...pagination, current: 1 });
@@ -602,19 +610,19 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                                 ))}
                               </div>
                             </Flexbox>
-                            <Flexbox gap={8} horizontal>
+                            <Flexbox horizontal gap={8}>
                               <Button
                                 icon={Plus}
-                                onClick={() => setAddCaseDatasetId(ds.id)}
                                 size="small"
+                                onClick={() => setAddCaseDatasetId(ds.id)}
                               >
                                 {t('testCase.actions.add')}
                               </Button>
                               <Button
                                 icon={FileUp}
-                                onClick={() => setImportDatasetId(ds.id)}
                                 size="small"
                                 type="primary"
+                                onClick={() => setImportDatasetId(ds.id)}
                               >
                                 {t('testCase.actions.import')}
                               </Button>
@@ -624,6 +632,8 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                             <Table
                               columns={columns}
                               dataSource={filteredCases}
+                              rowKey="id"
+                              size="small"
                               pagination={{
                                 current: pagination.current,
                                 onChange: (page, pageSize) =>
@@ -632,8 +642,6 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                                 showSizeChanger: false,
                                 total: filteredCases.length,
                               }}
-                              rowKey="id"
-                              size="small"
                             />
                           </div>
                         </>
@@ -650,10 +658,10 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       {/* Preview Modal */}
       <Modal
         footer={null}
-        onCancel={() => setPreviewCase(null)}
         open={!!previewCase}
         title={t('testCase.preview.title')}
         width={600}
+        onCancel={() => setPreviewCase(null)}
       >
         {previewCase && (
           <Flexbox gap={16}>
@@ -707,7 +715,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
                 {previewCase.content?.expectedOutput || '-'}
               </div>
             </Flexbox>
-            <Flexbox align="center" gap={8} horizontal>
+            <Flexbox horizontal align="center" gap={8}>
               {previewCase.metadata?.difficulty &&
                 getDifficultyBadge(previewCase.metadata.difficulty)}
               {previewCase.metadata?.tags?.map((tag: string) => (
@@ -732,15 +740,16 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       {editDataset && (
         <DatasetEditModal
           dataset={editDataset}
+          open={!!editDataset}
           onCancel={() => setEditDataset(null)}
           onSuccess={onRefresh}
-          open={!!editDataset}
         />
       )}
 
       {/* Create Dataset Modal */}
       <DatasetCreateModal
         benchmarkId={benchmarkId}
+        open={createOpen}
         onClose={() => setCreateOpen(false)}
         onSuccess={(dataset) => {
           onRefresh();
@@ -756,23 +765,23 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
             title: t('dataset.create.successTitle'),
           });
         }}
-        open={createOpen}
       />
 
       {/* Import Dataset Modal */}
       <DatasetImportModal
         datasetId={importDatasetId!}
+        open={!!importDatasetId}
+        presetId={datasets.find((ds) => ds.id === importDatasetId)?.metadata?.preset}
         onClose={() => setImportDatasetId(null)}
         onSuccess={handleRefreshTestCases}
-        open={!!importDatasetId}
       />
 
       {/* Add Test Case Modal */}
       <TestCaseCreateModal
         datasetId={addCaseDatasetId!}
+        open={!!addCaseDatasetId}
         onClose={() => setAddCaseDatasetId(null)}
         onSuccess={handleRefreshTestCases}
-        open={!!addCaseDatasetId}
       />
     </>
   );

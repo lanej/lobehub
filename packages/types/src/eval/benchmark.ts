@@ -1,4 +1,4 @@
-import type { AnswerExtractor, EvalBenchmarkRubric } from './rubric';
+import  { type AnswerExtractor, type EvalBenchmarkRubric } from './rubric';
 
 // ============================================
 // Benchmark Presets
@@ -25,4 +25,43 @@ export interface BenchmarkPresetFieldMapping {
   expected: string;
   input: string;
   metadata?: Record<string, string>;
+}
+
+// ============================================
+// Benchmark Entity Types
+// ============================================
+
+/**
+ * Full benchmark entity (for detail pages)
+ * Contains all fields including heavy data
+ */
+export interface AgentEvalBenchmark {
+  createdAt: Date;
+  description?: string | null;
+  id: string;
+  identifier: string;
+  isSystem: boolean;
+  metadata?: Record<string, unknown> | null;
+  name: string;
+  referenceUrl?: string | null;
+  rubrics: EvalBenchmarkRubric[];
+  updatedAt: Date;
+}
+
+/**
+ * Lightweight benchmark item (for list display)
+ * Excludes heavy fields, may include computed statistics
+ */
+export interface AgentEvalBenchmarkListItem {
+  createdAt: Date;
+  // Computed statistics for UI
+  datasetCount?: number;
+  description?: string | null;
+  id: string;
+  identifier: string;
+  isSystem: boolean;
+
+  name: string;
+  runCount?: number;
+  testCaseCount?: number;
 }
