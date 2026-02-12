@@ -609,6 +609,13 @@
       "when": 1770866533887,
       "tag": "0086_generation_topics_add_type_column",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1770891880026,
+      "tag": "0087_async_tasks_add_inference_id",
+      "breakpoints": true
     }
   ],
   "version": "6"
