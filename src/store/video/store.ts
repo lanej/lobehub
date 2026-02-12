@@ -5,6 +5,7 @@ import { type StateCreator } from 'zustand/vanilla';
 
 import { createDevtools } from '../middleware/createDevtools';
 import { type VideoStoreState, initialState } from './initialState';
+import { type CreateVideoAction, createCreateVideoSlice } from './slices/createVideo/action';
 import {
   type GenerationConfigAction,
   createGenerationConfigSlice,
@@ -17,12 +18,13 @@ import {
 //  ===============  aggregate createStoreFn ============ //
 
 export interface VideoStore
-  extends GenerationConfigAction, GenerationTopicAction, VideoStoreState {}
+  extends GenerationConfigAction, GenerationTopicAction, CreateVideoAction, VideoStoreState {}
 
 const createStore: StateCreator<VideoStore, [['zustand/devtools', never]]> = (...parameters) => ({
   ...initialState,
   ...createGenerationConfigSlice(...parameters),
   ...createGenerationTopicSlice(...parameters),
+  ...createCreateVideoSlice(...parameters),
 });
 
 //  ===============  implement useStore ============ //
