@@ -9,14 +9,20 @@ import {
   type GenerationConfigAction,
   createGenerationConfigSlice,
 } from './slices/generationConfig/action';
+import {
+  type GenerationTopicAction,
+  createGenerationTopicSlice,
+} from './slices/generationTopic/action';
 
 //  ===============  aggregate createStoreFn ============ //
 
-export interface VideoStore extends GenerationConfigAction, VideoStoreState {}
+export interface VideoStore
+  extends GenerationConfigAction, GenerationTopicAction, VideoStoreState {}
 
 const createStore: StateCreator<VideoStore, [['zustand/devtools', never]]> = (...parameters) => ({
   ...initialState,
   ...createGenerationConfigSlice(...parameters),
+  ...createGenerationTopicSlice(...parameters),
 });
 
 //  ===============  implement useStore ============ //

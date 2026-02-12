@@ -3,6 +3,7 @@ import { type FC } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
+import TopicSidebar from './TopicSidebar';
 import { styles } from './style';
 
 const Layout: FC = () => {
@@ -13,6 +14,7 @@ const Layout: FC = () => {
         <Flexbox className={styles.contentContainer} flex={1} height={'100%'}>
           <Outlet />
         </Flexbox>
+        <TopicSidebar />
       </Flexbox>
     </>
   );
