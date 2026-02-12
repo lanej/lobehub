@@ -17,5 +17,6 @@ export type HandleCreateVideoWebhookPayload = {
 };
 
 export type HandleCreateVideoWebhookResult =
+  | { status: 'pending' }
   | { inferenceId: string; status: 'success'; videoUrl: string }
   | { inferenceId: string; status: 'error'; error: string };

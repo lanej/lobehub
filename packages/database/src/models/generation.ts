@@ -2,6 +2,7 @@ import type {
   AsyncTaskError,
   AsyncTaskStatus,
   Generation,
+  GenerationAsset,
   ImageGenerationAsset,
 } from '@lobechat/types';
 import { FileSource } from '@lobechat/types';
@@ -93,8 +94,9 @@ export class GenerationModel {
 
   async createAssetAndFile(
     id: string,
-    asset: ImageGenerationAsset,
+    asset: GenerationAsset,
     file: Omit<NewFile, 'id' | 'userId'>,
+    source: FileSource = FileSource.ImageGeneration,
   ) {
     log('Creating generation asset and file with transaction: %s', id);
 
@@ -105,7 +107,7 @@ export class GenerationModel {
         {
           ...file,
           parentId: file.parentId ?? undefined,
-          source: FileSource.ImageGeneration,
+          source,
         },
         true,
         tx,
@@ -126,6 +128,14 @@ export class GenerationModel {
       return {
         file: newFile,
       };
+    });
+  }
+
+  async findByAsyncTaskId(asyncTaskId: string) {
+    log('Finding generation by asyncTaskId: %s', asyncTaskId);
+
+    return this.db.query.generations.findFirst({
+      where: eq(generations.asyncTaskId, asyncTaskId),
     });
   }
 

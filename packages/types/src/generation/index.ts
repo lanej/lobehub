@@ -35,7 +35,17 @@ export interface ImageGenerationAsset extends BaseGenerationAsset {
   width?: number;
 }
 
-export type GenerationAsset = ImageGenerationAsset;
+export interface VideoGenerationAsset extends BaseGenerationAsset {
+  coverUrl?: string;
+  duration?: number;
+  height?: number;
+  originalUrl?: string;
+  thumbnailUrl?: string;
+  url?: string;
+  width?: number;
+}
+
+export type GenerationAsset = ImageGenerationAsset | VideoGenerationAsset;
 
 export interface GenerationConfig {
   aspectRatio?: string;
