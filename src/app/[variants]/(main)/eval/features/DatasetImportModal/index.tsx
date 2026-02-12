@@ -1,13 +1,14 @@
 'use client';
 
 import { Modal } from '@lobehub/ui';
-import { App, Steps } from 'antd';
-import { memo, useCallback, useState } from 'react';
+import { App } from 'antd';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import { uploadService } from '@/services/upload';
 
+import { getPresetById } from '../../config/datasetPresets';
 import MappingStep, { type FieldMappingValue, autoInferMapping } from './MappingStep';
 import PreviewStep from './PreviewStep';
 import UploadStep from './UploadStep';
@@ -30,6 +31,10 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
 
+    // Dataset info
+    const [dataset, setDataset] = useState<any>(null);
+    const [loadingDataset, setLoadingDataset] = useState(false);
+
     // Upload result
     const [pathname, setPathname] = useState('');
     const [filename, setFilename] = useState('');
@@ -43,6 +48,26 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     // Mapping state
     const [mapping, setMapping] = useState<Record<string, MappingTarget>>({});
     const [delimiter, setDelimiter] = useState('');
+
+    // Fetch dataset info to get preset
+    useEffect(() => {
+      if (open && datasetId) {
+        setLoadingDataset(true);
+        lambdaClient.agentEval.getDataset
+          .query({ id: datasetId })
+          .then((data) => {
+            setDataset(data);
+          })
+          .catch(() => {
+            message.error('Failed to load dataset info');
+          })
+          .finally(() => {
+            setLoadingDataset(false);
+          });
+      }
+    }, [open, datasetId, message]);
+
+    const preset = getPresetById(dataset?.metadata?.preset);
 
     const reset = useCallback(() => {
       setStep(0);
@@ -86,8 +111,8 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
           setTotalCount(result.totalCount);
           setFormat(result.format);
 
-          // 3. Auto-infer field mapping
-          const inferred = autoInferMapping(result.headers);
+          // 3. Auto-infer field mapping using preset
+          const inferred = autoInferMapping(result.headers, preset);
           setMapping(inferred);
 
           // 4. Advance to mapping step
@@ -186,18 +211,13 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
         width={720}
       >
         <div style={{ paddingBlock: 16 }}>
-          <Steps
-            current={step}
-            items={[
-              { title: t('dataset.import.step.upload') },
-              { title: t('dataset.import.step.mapping') },
-              { title: t('dataset.import.step.preview') },
-            ]}
-            size="small"
-            style={{ marginBottom: 24 }}
-          />
-
-          {step === 0 && <UploadStep loading={uploading} onFileSelect={handleFileSelect} />}
+          {step === 0 && (
+            <UploadStep
+              loading={uploading || loadingDataset}
+              preset={preset}
+              onFileSelect={handleFileSelect}
+            />
+          )}
 
           {step === 1 && (
             <MappingStep

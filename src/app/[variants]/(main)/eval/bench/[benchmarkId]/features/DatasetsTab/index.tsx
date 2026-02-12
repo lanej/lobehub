@@ -1,17 +1,19 @@
 'use client';
 
 import { Button, Empty, Flexbox, Input } from '@lobehub/ui';
-import { Badge, Card, Modal, Table } from 'antd';
+import { App, Badge, Card, Modal, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { createStaticStyles } from 'antd-style';
-import { ChevronRight, Database, Eye, Plus, Search } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { ChevronRight, Database, Eye, FileUp, Plus, Search } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import NeuralNetworkLoading from '@/components/NeuralNetworkLoading';
 import { lambdaClient } from '@/libs/trpc/client';
 
 import DatasetCreateModal from '../../../../features/DatasetCreateModal';
 import DatasetImportModal from '../../../../features/DatasetImportModal';
+import TestCaseCreateModal from '../../../../features/TestCaseCreateModal';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   card: css`
@@ -145,7 +147,7 @@ interface DatasetsTabProps {
 
 const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, onRefresh }) => {
   const { t } = useTranslation('eval');
-  const { modal } = Modal;
+  const { modal } = App.useApp();
   const [expandedDs, setExpandedDs] = useState<string | null>(null);
   const [testCases, setTestCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,6 +160,13 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
   // Create and Import modals
   const [createOpen, setCreateOpen] = useState(false);
   const [importDatasetId, setImportDatasetId] = useState<string | null>(null);
+  const [addCaseDatasetId, setAddCaseDatasetId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refreshTestCases = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+    onRefresh();
+  }, [onRefresh]);
 
   useEffect(() => {
     if (!expandedDs) return;
@@ -178,7 +187,7 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
     };
 
     fetchCases();
-  }, [expandedDs, pagination.current, pagination.pageSize]);
+  }, [expandedDs, pagination.current, pagination.pageSize, refreshKey]);
 
   const filteredCases = testCases.filter((c) => {
     if (diffFilter !== 'all' && c.metadata?.difficulty !== diffFilter) return false;
@@ -428,67 +437,146 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
 
                   {isExpanded && (
                     <div className={styles.expandedSection}>
-                      <div className={styles.filtersRow}>
-                        <div style={{ position: 'relative' }}>
-                          <Search
-                            size={14}
+                      {loading ? (
+                        <Flexbox
+                          align="center"
+                          justify="center"
+                          style={{ padding: '48px 24px' }}
+                        >
+                          <NeuralNetworkLoading size={48} />
+                        </Flexbox>
+                      ) : total === 0 ? (
+                        <Flexbox
+                          align="center"
+                          gap={8}
+                          justify="center"
+                          style={{ padding: '48px 24px' }}
+                        >
+                          <div className={styles.emptyIcon}>
+                            <Database
+                              size={20}
+                              style={{ color: 'var(--ant-color-text-tertiary)' }}
+                            />
+                          </div>
+                          <p
+                            style={{
+                              color: 'var(--ant-color-text)',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              margin: 0,
+                            }}
+                          >
+                            {t('testCase.empty.title')}
+                          </p>
+                          <p
                             style={{
                               color: 'var(--ant-color-text-tertiary)',
-                              left: 10,
-                              position: 'absolute',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                            }}
-                          />
-                          <Input
-                            onChange={(e) => {
-                              setSearch(e.target.value);
-                              setPagination({ ...pagination, current: 1 });
-                            }}
-                            placeholder={t('testCase.search.placeholder')}
-                            size="small"
-                            style={{
                               fontSize: 12,
-                              paddingLeft: 32,
-                              width: 192,
+                              margin: 0,
                             }}
-                            value={search}
-                          />
-                        </div>
-                        <div className={styles.filterContainer}>
-                          {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
-                            <button
-                              key={f}
-                              className={styles.filterButton}
-                              data-active={diffFilter === f}
-                              onClick={() => {
-                                setDiffFilter(f);
-                                setPagination({ ...pagination, current: 1 });
-                              }}
+                          >
+                            {t('testCase.empty.description')}
+                          </p>
+                          <Flexbox gap={8} horizontal style={{ marginTop: 8 }}>
+                            <Button
+                              icon={FileUp}
+                              onClick={() => setImportDatasetId(ds.id)}
+                              size="small"
                             >
-                              {f}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className={styles.table}>
-                        <Table
-                          columns={columns}
-                          dataSource={filteredCases}
-                          loading={loading}
-                          pagination={{
-                            current: pagination.current,
-                            onChange: (page, pageSize) =>
-                              setPagination({ current: page, pageSize }),
-                            pageSize: pagination.pageSize,
-                            showSizeChanger: false,
-                            total: filteredCases.length,
-                          }}
-                          rowKey="id"
-                          size="small"
-                        />
-                      </div>
+                              {t('testCase.actions.import')}
+                            </Button>
+                            <Button
+                              icon={Plus}
+                              onClick={() => setAddCaseDatasetId(ds.id)}
+                              size="small"
+                              type="primary"
+                            >
+                              {t('testCase.actions.add')}
+                            </Button>
+                          </Flexbox>
+                        </Flexbox>
+                      ) : (
+                        <>
+                          <div className={styles.filtersRow}>
+                            <Flexbox align="center" gap={8} horizontal>
+                              <div style={{ position: 'relative' }}>
+                                <Search
+                                  size={14}
+                                  style={{
+                                    color: 'var(--ant-color-text-tertiary)',
+                                    left: 10,
+                                    position: 'absolute',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                  }}
+                                />
+                                <Input
+                                  onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPagination({ ...pagination, current: 1 });
+                                  }}
+                                  placeholder={t('testCase.search.placeholder')}
+                                  size="small"
+                                  style={{
+                                    fontSize: 12,
+                                    paddingLeft: 32,
+                                    width: 192,
+                                  }}
+                                  value={search}
+                                />
+                              </div>
+                              <div className={styles.filterContainer}>
+                                {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
+                                  <button
+                                    key={f}
+                                    className={styles.filterButton}
+                                    data-active={diffFilter === f}
+                                    onClick={() => {
+                                      setDiffFilter(f);
+                                      setPagination({ ...pagination, current: 1 });
+                                    }}
+                                  >
+                                    {f}
+                                  </button>
+                                ))}
+                              </div>
+                            </Flexbox>
+                            <Flexbox gap={8} horizontal>
+                              <Button
+                                icon={FileUp}
+                                onClick={() => setImportDatasetId(ds.id)}
+                                size="small"
+                              >
+                                {t('testCase.actions.import')}
+                              </Button>
+                              <Button
+                                icon={Plus}
+                                onClick={() => setAddCaseDatasetId(ds.id)}
+                                size="small"
+                                type="primary"
+                              >
+                                {t('testCase.actions.add')}
+                              </Button>
+                            </Flexbox>
+                          </div>
+                          <div className={styles.table}>
+                            <Table
+                              columns={columns}
+                              dataSource={filteredCases}
+                              pagination={{
+                                current: pagination.current,
+                                onChange: (page, pageSize) =>
+                                  setPagination({ current: page, pageSize }),
+                                pageSize: pagination.pageSize,
+                                showSizeChanger: false,
+                                total: filteredCases.length,
+                              }}
+                              rowKey="id"
+                              size="small"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </Card>
@@ -586,9 +674,10 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
         onSuccess={(dataset) => {
           onRefresh();
           // Ask if user wants to import data immediately
-          modal.confirm({
+          modal.success({
             cancelText: t('common.later'),
             content: t('dataset.create.importNow'),
+            okCancel: true,
             okText: t('dataset.actions.import'),
             onOk: () => {
               setImportDatasetId(dataset.id);
@@ -603,8 +692,16 @@ const DatasetsTab = memo<DatasetsTabProps>(({ benchmarkId, datasets, onImport, o
       <DatasetImportModal
         datasetId={importDatasetId!}
         onClose={() => setImportDatasetId(null)}
-        onSuccess={onRefresh}
+        onSuccess={refreshTestCases}
         open={!!importDatasetId}
+      />
+
+      {/* Add Test Case Modal */}
+      <TestCaseCreateModal
+        datasetId={addCaseDatasetId!}
+        onClose={() => setAddCaseDatasetId(null)}
+        onSuccess={refreshTestCases}
+        open={!!addCaseDatasetId}
       />
     </>
   );

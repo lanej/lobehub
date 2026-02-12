@@ -4,6 +4,7 @@ export interface BenchmarkSliceState {
   isCreatingBenchmark: boolean;
   isDeletingBenchmark: boolean;
   isLoadingBenchmarkList: boolean;
+  isUpdatingBenchmark: boolean;
 }
 
 export const benchmarkInitialState: BenchmarkSliceState = {
@@ -12,4 +13,5 @@ export const benchmarkInitialState: BenchmarkSliceState = {
   isCreatingBenchmark: false,
   isDeletingBenchmark: false,
   isLoadingBenchmarkList: false,
+  isUpdatingBenchmark: false,
 };

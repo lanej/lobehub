@@ -1,37 +1,33 @@
 'use client';
 
-import { Button, Flexbox, Icon } from '@lobehub/ui';
+import { Flexbox } from '@lobehub/ui';
 import { Badge, Card } from 'antd';
 import { createStaticStyles } from 'antd-style';
 import {
   Activity,
-  ArrowLeft,
   Award,
   BarChart3,
   CheckCircle2,
   Database,
-  Download,
   FlaskConical,
   Gauge,
   LoaderPinwheel,
-  Plus,
   Server,
   Target,
-  Trash2,
   TrendingUp,
   Trophy,
-  User,
   Volleyball,
   Zap,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import { useEvalStore } from '@/store/eval';
 
 import DatasetImportModal from '../../features/DatasetImportModal';
+import BenchmarkHeader from './features/BenchmarkHeader';
 import DatasetsTab from './features/DatasetsTab';
 import RunsTab from './features/RunsTab';
 
@@ -58,17 +54,6 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
   container: css`
     overflow-y: auto;
     padding: 24px 32px;
-  `,
-  iconBox: css`
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-
-    width: 40px;
-    height: 40px;
-
-    border-radius: 10px;
   `,
   statCard: css`
     .ant-card-body {
@@ -124,12 +109,6 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     gap: 4px;
     border-bottom: 1px solid ${cssVar.colorBorderSecondary};
   `,
-  title: css`
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: ${cssVar.colorText};
-  `,
 }));
 
 const BenchmarkDetail = memo(() => {
@@ -139,12 +118,16 @@ const BenchmarkDetail = memo(() => {
   const [datasets, setDatasets] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'datasets' | 'runs'>('datasets');
   const [importOpen, setImportOpen] = useState(false);
-  const deleteBenchmark = useEvalStore((s) => s.deleteBenchmark);
 
   const systemIcon = useMemo(
     () => (benchmarkId ? getSystemIcon(benchmarkId) : Server),
     [benchmarkId],
   );
+
+  const refreshBenchmark = useCallback(() => {
+    if (!benchmarkId) return;
+    lambdaClient.agentEval.getBenchmark.query({ id: benchmarkId }).then(setBenchmark);
+  }, [benchmarkId]);
 
   const refreshDatasets = useCallback(() => {
     if (!benchmarkId) return;
@@ -155,9 +138,9 @@ const BenchmarkDetail = memo(() => {
 
   useEffect(() => {
     if (!benchmarkId) return;
-    lambdaClient.agentEval.getBenchmark.query({ id: benchmarkId }).then(setBenchmark);
+    refreshBenchmark();
     refreshDatasets();
-  }, [benchmarkId, refreshDatasets]);
+  }, [benchmarkId, refreshBenchmark, refreshDatasets]);
 
   const useFetchRuns = useEvalStore((s) => s.useFetchRuns);
   const runList = useEvalStore((s) => s.runList);
@@ -168,100 +151,18 @@ const BenchmarkDetail = memo(() => {
   const bestScore =
     completedRuns.length > 0 ? Math.max(...completedRuns.map((r: any) => r.metrics?.score || 0)) : null;
 
-  const handleDelete = async () => {
-    if (!benchmarkId) return;
-    await deleteBenchmark(benchmarkId);
-    window.location.href = '/eval';
-  };
-
   if (!benchmark) return null;
 
   const totalCases = datasets.reduce((sum, ds) => sum + (ds.testCaseCount || 0), 0);
 
   return (
     <Flexbox className={styles.container} gap={24} height="100%" width="100%">
-      {/* Back + Header */}
-      <Flexbox gap={16}>
-        <Link
-          style={{
-            alignItems: 'center',
-            color: 'var(--ant-color-text-tertiary)',
-            display: 'inline-flex',
-            fontSize: 14,
-            gap: 4,
-            textDecoration: 'none',
-            transition: 'color 0.2s',
-          }}
-          to="/eval"
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--ant-color-text)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--ant-color-text-tertiary)';
-          }}
-        >
-          <ArrowLeft size={16} />
-          {t('benchmark.detail.backToOverview')}
-        </Link>
-
-        <Flexbox align="start" horizontal justify="space-between">
-          <Flexbox align="start" gap={12} horizontal>
-            <div
-              className={styles.iconBox}
-              style={{
-                background:
-                  benchmark.source === 'user'
-                    ? 'var(--ant-color-success-bg)'
-                    : 'var(--ant-color-primary-bg)',
-              }}
-            >
-              <Icon
-                icon={benchmark.source === 'user' ? User : systemIcon}
-                size={20}
-                style={{
-                  color:
-                    benchmark.source === 'user'
-                      ? 'var(--ant-color-success)'
-                      : 'var(--ant-color-primary)',
-                }}
-              />
-            </div>
-            <Flexbox gap={4}>
-              <h1 className={styles.title}>{benchmark.name}</h1>
-              {benchmark.description && (
-                <p
-                  style={{
-                    color: 'var(--ant-color-text-tertiary)',
-                    fontSize: 14,
-                    margin: 0,
-                    marginTop: 2,
-                  }}
-                >
-                  {benchmark.description}
-                </p>
-              )}
-            </Flexbox>
-          </Flexbox>
-
-          <Flexbox gap={8} horizontal>
-            <Button icon={Download} size="small" variant="outlined">
-              {t('benchmark.actions.export')}
-            </Button>
-            <Button
-              icon={Trash2}
-              onClick={handleDelete}
-              size="small"
-              style={{
-                borderColor: 'var(--ant-color-error-border)',
-                color: 'var(--ant-color-error)',
-              }}
-              variant="outlined"
-            >
-              {t('benchmark.actions.delete.title')}
-            </Button>
-          </Flexbox>
-        </Flexbox>
-      </Flexbox>
+      {/* Header */}
+      <BenchmarkHeader
+        benchmark={benchmark}
+        onRefresh={refreshBenchmark}
+        systemIcon={systemIcon}
+      />
 
       {/* Summary Cards */}
       <div

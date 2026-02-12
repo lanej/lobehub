@@ -17,6 +17,13 @@ export interface BenchmarkAction {
   }) => Promise<any>;
   deleteBenchmark: (id: string) => Promise<void>;
   refreshBenchmarks: () => Promise<void>;
+  updateBenchmark: (params: {
+    description?: string;
+    id: string;
+    identifier: string;
+    metadata?: Record<string, unknown>;
+    name: string;
+  }) => Promise<void>;
   useFetchBenchmarks: () => SWRResponse;
 }
 
@@ -55,6 +62,22 @@ export const createBenchmarkSlice: StateCreator<
 
   refreshBenchmarks: async () => {
     await mutate(FETCH_BENCHMARKS_KEY);
+  },
+
+  updateBenchmark: async (params) => {
+    set({ isUpdatingBenchmark: true }, false, 'updateBenchmark/start');
+    try {
+      await lambdaClient.agentEval.updateBenchmark.mutate({
+        id: params.id,
+        identifier: params.identifier,
+        name: params.name,
+        description: params.description,
+        metadata: params.metadata,
+      });
+      await get().refreshBenchmarks();
+    } finally {
+      set({ isUpdatingBenchmark: false }, false, 'updateBenchmark/end');
+    }
   },
 
   useFetchBenchmarks: () => {

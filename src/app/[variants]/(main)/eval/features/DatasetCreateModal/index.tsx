@@ -3,11 +3,18 @@
 import { Center, Flexbox, Icon, Modal, Text } from '@lobehub/ui';
 import { App, Form, Input, Select } from 'antd';
 import { cssVar } from 'antd-style';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import { DATASET_PRESETS, getPresetsByCategory } from '../../config/datasetPresets';
+
+const toIdentifier = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replaceAll(/\s+/g, '-')
+    .replaceAll(/[^\da-z-]/g, '');
 
 interface DatasetCreateModalProps {
   benchmarkId: string;
@@ -32,10 +39,20 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
 
     const [loading, setLoading] = useState(false);
     const [selectedPreset, setSelectedPreset] = useState<string>('custom');
+    const [identifierTouched, setIdentifierTouched] = useState(false);
+
+    const nameValue = Form.useWatch('name', form);
+
+    useEffect(() => {
+      if (!identifierTouched && nameValue) {
+        form.setFieldValue('identifier', toIdentifier(nameValue));
+      }
+    }, [nameValue, identifierTouched, form]);
 
     const handleClose = () => {
       form.resetFields();
       setSelectedPreset('custom');
+      setIdentifierTouched(false);
       onClose();
     };
 
@@ -44,14 +61,9 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
         const values = await form.validateFields();
         setLoading(true);
 
-        const identifier = values.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-
         const result = await lambdaClient.agentEval.createDataset.mutate({
           benchmarkId,
-          identifier,
+          identifier: values.identifier.trim(),
           name: values.name,
           description: values.description,
           metadata: {
@@ -59,7 +71,6 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
           },
         });
 
-        message.success(t('dataset.create.success'));
         handleClose();
         onSuccess?.({
           id: result.id,
@@ -111,6 +122,17 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
             <Input placeholder={t('dataset.create.name.placeholder')} />
           </Form.Item>
 
+          <Form.Item
+            label={t('dataset.create.identifier.label')}
+            name="identifier"
+            rules={[{ required: true, message: t('dataset.create.identifierRequired') }]}
+          >
+            <Input
+              onChange={() => setIdentifierTouched(true)}
+              placeholder={t('dataset.create.identifier.placeholder')}
+            />
+          </Form.Item>
+
           <Form.Item label={t('dataset.create.description.label')} name="description">
             <Input.TextArea
               placeholder={t('dataset.create.description.placeholder')}
@@ -154,15 +176,15 @@ const DatasetCreateModal = memo<DatasetCreateModalProps>(
                   >
                     <Center
                       flex="none"
-                      height={32}
-                      width={32}
+                      height={40}
+                      width={40}
                       style={{
                         border: `1px solid ${cssVar.colorFillTertiary}`,
                         borderRadius: cssVar.borderRadius,
                         background: cssVar.colorBgElevated,
                       }}
                     >
-                      <Icon icon={preset.icon} />
+                      <Icon icon={preset.icon} size={18} />
                     </Center>
                     <Flexbox flex={1} gap={2} style={{ minWidth: 0, overflow: 'hidden' }}>
                       <Text ellipsis style={{ fontSize: 14, fontWeight: 500 }}>

@@ -5,6 +5,8 @@ import { Input, Select, Table } from 'antd';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { type DatasetPreset } from '../../config/datasetPresets';
+
 // Known candidate names for auto-inference
 const INPUT_CANDIDATES = new Set([
   'input',
@@ -50,25 +52,42 @@ interface MappingStepProps {
   delimiter: string;
 }
 
-const autoInferMapping = (headers: string[]): Record<string, MappingTarget> => {
+const autoInferMapping = (
+  headers: string[],
+  preset?: DatasetPreset,
+): Record<string, MappingTarget> => {
   const result: Record<string, MappingTarget> = {};
   let inputFound = false;
   let expectedFound = false;
   let contextFound = false;
   let choicesFound = false;
 
+  // Use preset's fieldInference if available, otherwise use default candidates
+  const inputCandidates = preset
+    ? new Set(preset.fieldInference.input.map((s) => s.toLowerCase()))
+    : INPUT_CANDIDATES;
+  const expectedCandidates = preset
+    ? new Set(preset.fieldInference.expected.map((s) => s.toLowerCase()))
+    : EXPECTED_CANDIDATES;
+  const choicesCandidates = preset
+    ? new Set(preset.fieldInference.choices.map((s) => s.toLowerCase()))
+    : CHOICES_CANDIDATES;
+  const contextCandidates = preset
+    ? new Set(preset.fieldInference.context.map((s) => s.toLowerCase()))
+    : CONTEXT_CANDIDATES;
+
   for (const h of headers) {
     const lower = h.toLowerCase().trim();
-    if (!inputFound && INPUT_CANDIDATES.has(lower)) {
+    if (!inputFound && inputCandidates.has(lower)) {
       result[h] = 'input';
       inputFound = true;
-    } else if (!expectedFound && EXPECTED_CANDIDATES.has(lower)) {
+    } else if (!expectedFound && expectedCandidates.has(lower)) {
       result[h] = 'expected';
       expectedFound = true;
-    } else if (!choicesFound && CHOICES_CANDIDATES.has(lower)) {
+    } else if (!choicesFound && choicesCandidates.has(lower)) {
       result[h] = 'choices';
       choicesFound = true;
-    } else if (!contextFound && CONTEXT_CANDIDATES.has(lower)) {
+    } else if (!contextFound && contextCandidates.has(lower)) {
       result[h] = 'context';
       contextFound = true;
     } else {
