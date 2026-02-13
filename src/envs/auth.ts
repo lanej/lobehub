@@ -18,6 +18,12 @@ declare global {
       // ===== Auth Provider Credentials ===== //
       AUTH_GOOGLE_ID?: string;
       AUTH_GOOGLE_SECRET?: string;
+      /**
+       * Additional OAuth scopes to request from Google.
+       * Comma-separated list of scopes (e.g., "https://www.googleapis.com/auth/bigquery.readonly").
+       * These are added to the default openid, email, profile scopes.
+       */
+      AUTH_GOOGLE_SCOPE?: string;
 
       AUTH_APPLE_CLIENT_ID?: string;
       AUTH_APPLE_CLIENT_SECRET?: string;
@@ -119,6 +125,7 @@ export const getAuthConfig = () => {
 
       AUTH_GOOGLE_ID: z.string().optional(),
       AUTH_GOOGLE_SECRET: z.string().optional(),
+      AUTH_GOOGLE_SCOPE: z.string().optional(),
 
       AUTH_APPLE_CLIENT_ID: z.string().optional(),
       AUTH_APPLE_CLIENT_SECRET: z.string().optional(),
@@ -215,6 +222,7 @@ export const getAuthConfig = () => {
       // Auth Provider Credentials
       AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
       AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+      AUTH_GOOGLE_SCOPE: process.env.AUTH_GOOGLE_SCOPE,
 
       AUTH_APPLE_CLIENT_ID: process.env.AUTH_APPLE_CLIENT_ID,
       AUTH_APPLE_CLIENT_SECRET: process.env.AUTH_APPLE_CLIENT_SECRET,
