@@ -4,8 +4,11 @@ import {
   StreamableHTTPAuthSchema,
 } from '@lobechat/types';
 import { TRPCError } from '@trpc/server';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { type LobeChatDatabase } from '@lobechat/database';
+import { account } from '@lobechat/database/schemas';
 import { type ToolCallContent } from '@/libs/mcp';
 import { authedProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase, telemetry } from '@/libs/trpc/lambda/middleware';
@@ -43,6 +46,40 @@ const checkStdioEnvironment = (params: z.infer<typeof mcpClientParamsSchema>) =>
   }
 };
 
+/**
+ * For oauth2 auth type, resolve the user's Google OAuth access token from the
+ * Better Auth accounts table and inject it into the auth params.
+ */
+const resolveOAuth2Token = async (
+  params: z.infer<typeof mcpClientParamsSchema>,
+  serverDB: LobeChatDatabase,
+  userId: string,
+): Promise<z.infer<typeof mcpClientParamsSchema>> => {
+  if (params.type !== 'http' || params.auth?.type !== 'oauth2') return params;
+
+  const [googleAccount] = await serverDB
+    .select({ accessToken: account.accessToken })
+    .from(account)
+    .where(and(eq(account.userId, userId), eq(account.providerId, 'google')))
+    .limit(1);
+
+  if (!googleAccount?.accessToken) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'No Google OAuth token found. Please sign out and sign back in to grant access.',
+    });
+  }
+
+  return {
+    ...params,
+    auth: {
+      ...params.auth,
+      accessToken: googleAccount.accessToken,
+    },
+  };
+};
+
 // Schema for metadata that frontend needs to pass (fields that backend cannot determine)
 const metaSchema = z
   .object({
@@ -77,12 +114,23 @@ const mcpProcedure = authedProcedure
 export const mcpRouter = router({
   getStreamableMcpServerManifest: mcpProcedure
     .input(GetStreamableMcpServerManifestInputSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // Resolve OAuth2 token if needed
+      let auth = input.auth;
+      if (auth?.type === 'oauth2') {
+        const resolved = await resolveOAuth2Token(
+          { auth, headers: input.headers, name: input.identifier, type: 'http', url: input.url },
+          ctx.serverDB,
+          ctx.userId,
+        );
+        if (resolved.type === 'http') auth = resolved.auth;
+      }
+
       return await mcpService.getStreamableMcpServerManifest(
         input.identifier,
         input.url,
         input.metadata,
-        input.auth,
+        auth,
         input.headers,
       );
     }),
@@ -91,34 +139,28 @@ export const mcpRouter = router({
   // listTools now accepts MCPClientParams directly
   listTools: mcpProcedure
     .input(mcpClientParamsSchema) // Use the unified schema
-    .query(async ({ input }) => {
-      // Stdio check can be done here or rely on the service/client layer
+    .query(async ({ input, ctx }) => {
       checkStdioEnvironment(input);
-
-      // Pass the validated MCPClientParams to the service
-      return await mcpService.listTools(input);
+      const params = await resolveOAuth2Token(input, ctx.serverDB, ctx.userId);
+      return await mcpService.listTools(params);
     }),
 
   // listResources now accepts MCPClientParams directly
   listResources: mcpProcedure
     .input(mcpClientParamsSchema) // Use the unified schema
-    .query(async ({ input }) => {
-      // Stdio check can be done here or rely on the service/client layer
+    .query(async ({ input, ctx }) => {
       checkStdioEnvironment(input);
-
-      // Pass the validated MCPClientParams to the service
-      return await mcpService.listResources(input);
+      const params = await resolveOAuth2Token(input, ctx.serverDB, ctx.userId);
+      return await mcpService.listResources(params);
     }),
 
   // listPrompts now accepts MCPClientParams directly
   listPrompts: mcpProcedure
     .input(mcpClientParamsSchema) // Use the unified schema
-    .query(async ({ input }) => {
-      // Stdio check can be done here or rely on the service/client layer
+    .query(async ({ input, ctx }) => {
       checkStdioEnvironment(input);
-
-      // Pass the validated MCPClientParams to the service
-      return await mcpService.listPrompts(input);
+      const params = await resolveOAuth2Token(input, ctx.serverDB, ctx.userId);
+      return await mcpService.listPrompts(params);
     }),
 
   // callTool now accepts MCPClientParams, toolName, and args
@@ -132,8 +174,8 @@ export const mcpRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Stdio check can be done here or rely on the service/client layer
       checkStdioEnvironment(input.params);
+      const clientParams = await resolveOAuth2Token(input.params, ctx.serverDB, ctx.userId);
 
       const startTime = Date.now();
       let success = true;
@@ -150,7 +192,7 @@ export const mcpRouter = router({
         // Pass the validated params, toolName, args, and bound processContentBlocks to the service
         result = await mcpService.callTool({
           argsStr: input.args,
-          clientParams: input.params,
+          clientParams,
           processContentBlocks: boundProcessContentBlocks,
           toolName: input.toolName,
         });

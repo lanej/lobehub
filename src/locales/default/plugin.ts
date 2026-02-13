@@ -231,6 +231,9 @@ export default {
   'dev.mcp.auth.desc': 'Select authentication method for MCP server',
   'dev.mcp.auth.label': 'Auth type',
   'dev.mcp.auth.none': 'No auth',
+  'dev.mcp.auth.oauth2': 'Google OAuth',
+  'dev.mcp.auth.oauth2Hint':
+    'Your Google OAuth token will be passed to this MCP server automatically. The server will act on your behalf using your Google account permissions.',
   'dev.mcp.auth.placeholder': 'Select auth type',
   'dev.mcp.auth.token.desc': 'Enter your API Key or Bearer Token',
   'dev.mcp.auth.token.label': 'API Key',

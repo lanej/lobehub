@@ -224,6 +224,10 @@ const MCPManifestForm = ({ form, isEditMode }: MCPManifestFormProps) => {
                       label: t('dev.mcp.auth.bear'),
                       value: 'bearer',
                     },
+                    {
+                      label: t('dev.mcp.auth.oauth2'),
+                      value: 'oauth2',
+                    },
                   ]}
                 />
               </FormItem>
@@ -236,6 +240,13 @@ const MCPManifestForm = ({ form, isEditMode }: MCPManifestFormProps) => {
                 >
                   <InputPassword placeholder={t('dev.mcp.auth.token.placeholder')} />
                 </FormItem>
+              )}
+              {authType === 'oauth2' && (
+                <Alert
+                  showIcon
+                  title={t('dev.mcp.auth.oauth2Hint')}
+                  type="info"
+                />
               )}
               <CollapsibleSection title={t('dev.mcp.advanced.title')}>
                 <FormItem
