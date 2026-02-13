@@ -141,7 +141,7 @@ const MappingStep = memo<MappingStepProps>(
     const { t } = useTranslation('eval');
     const [hideSkipped, setHideSkipped] = useState(true);
 
-    const hasExpected = Object.values(mapping).includes('expected');
+    const hasChoices = Object.values(mapping).includes('choices');
     const hasIgnored = Object.values(mapping).includes('ignore');
 
     const visibleHeaders = useMemo(
@@ -162,14 +162,28 @@ const MappingStep = memo<MappingStepProps>(
     ].map(({ desc, label, value }) => ({
       label: (
         <Flexbox gap={2}>
-          <span style={{ fontSize: 11 }}>{t(`dataset.import.${label}`)}</span>
+          <span style={{ fontSize: 11 }}>{t(`dataset.import.${label}` as any)}</span>
           <span style={{ color: roleDescColor(value as MappingTarget), fontSize: 11 }}>
-            {t(`dataset.import.${desc}`)}
+            {t(`dataset.import.${desc}` as any)}
           </span>
         </Flexbox>
       ),
       value: value as MappingTarget,
     }));
+
+    const handleRoleChange = (h: string, val: MappingTarget) => {
+      const newMapping = { ...mapping };
+
+      // Ensure single assignment for input/expected/context/sortOrder
+      if (val !== 'metadata' && val !== 'ignore') {
+        for (const [k, v] of Object.entries(newMapping)) {
+          if (v === val) newMapping[k] = 'ignore';
+        }
+      }
+
+      newMapping[h] = val;
+      onMappingChange(newMapping);
+    };
 
     const columns = useMemo(
       () =>
@@ -177,6 +191,7 @@ const MappingStep = memo<MappingStepProps>(
           const role = mapping[h];
           const isIgnored = role === 'ignore';
           const allowWrap = WRAP_ROLES.has(role);
+          const color = ROLE_COLORS[role];
 
           return {
             dataIndex: h,
@@ -193,35 +208,28 @@ const MappingStep = memo<MappingStepProps>(
                   })
                 : undefined,
             title: (
-              <Flexbox gap={4}>
+              <Flexbox gap={2}>
+                <span style={{ fontSize: 13, opacity: isIgnored ? 0.4 : 1 }}>{h}</span>
                 <Select
-                  onChange={(val: MappingTarget) => {
-                    const newMapping = { ...mapping };
-
-                    // Ensure single assignment for input/expected/context/sortOrder
-                    if (val !== 'metadata' && val !== 'ignore') {
-                      for (const [k, v] of Object.entries(newMapping)) {
-                        if (v === val) newMapping[k] = 'ignore';
-                      }
-                    }
-
-                    newMapping[h] = val;
-                    onMappingChange(newMapping);
-                  }}
                   options={targetOptions}
                   popupMatchSelectWidth={200}
-                  // size="small"
-                  variant={'filled'}
-                  style={{ width: '100%' }}
+                  size="small"
                   value={role}
+                  variant="borderless"
+                  style={{
+                    color:
+                      color || (isIgnored ? cssVar.colorTextQuaternary : cssVar.colorTextTertiary),
+                    fontSize: 11,
+                    marginInlineStart: -7,
+                  }}
+                  onChange={(val: MappingTarget) => handleRoleChange(h, val)}
                 />
-                <span style={{ fontSize:15 }}>{h}</span>
               </Flexbox>
             ),
             width: COL_WIDTHS[role],
           };
         }),
-      [visibleHeaders, mapping, onMappingChange],
+      [visibleHeaders, mapping],
     );
 
     const scrollX = useMemo(
@@ -231,14 +239,33 @@ const MappingStep = memo<MappingStepProps>(
 
     return (
       <Flexbox gap={12}>
-        <Flexbox align="center" horizontal justify="space-between">
-          <Flexbox align="center" gap={16} horizontal>
+        {/* Toolbar */}
+        <Flexbox horizontal align="center" justify="space-between">
+          <Flexbox horizontal align="center" gap={16}>
             <span style={{ color: cssVar.colorTextTertiary, fontSize: 13 }}>
               {t('dataset.import.fieldMapping.desc')}
             </span>
             <span style={{ color: cssVar.colorTextQuaternary, fontSize: 12 }}>
               {t('dataset.import.preview.rows', { count: totalCount })}
             </span>
+          </Flexbox>
+          <Flexbox horizontal align="center" gap={16}>
+            {hasChoices && (
+              <Flexbox horizontal align="center" gap={8}>
+                <span
+                  style={{ color: cssVar.colorTextSecondary, fontSize: 12, whiteSpace: 'nowrap' }}
+                >
+                  {t('dataset.import.expectedDelimiter.desc')}
+                </span>
+                <Input
+                  placeholder={t('dataset.import.expectedDelimiter.placeholder')}
+                  size="small"
+                  style={{ width: 120 }}
+                  value={delimiter}
+                  onChange={(e) => onDelimiterChange(e.target.value)}
+                />
+              </Flexbox>
+            )}
             {hasIgnored && (
               <Checkbox checked={hideSkipped} onChange={(e) => setHideSkipped(e.target.checked)}>
                 <span style={{ color: cssVar.colorTextSecondary, fontSize: 12 }}>
@@ -247,24 +274,9 @@ const MappingStep = memo<MappingStepProps>(
               </Checkbox>
             )}
           </Flexbox>
-          {hasExpected && (
-            <Flexbox align="center" gap={8} horizontal>
-              <span
-                style={{ color: cssVar.colorTextSecondary, fontSize: 12, whiteSpace: 'nowrap' }}
-              >
-                {t('dataset.import.expectedDelimiter.desc')}
-              </span>
-              <Input
-                onChange={(e) => onDelimiterChange(e.target.value)}
-                placeholder={t('dataset.import.expectedDelimiter.placeholder')}
-                size="small"
-                style={{ width: 120 }}
-                value={delimiter}
-              />
-            </Flexbox>
-          )}
         </Flexbox>
 
+        {/* Data preview table */}
         <Table
           columns={columns}
           dataSource={preview.map((row, i) => ({ ...row, _key: i }))}

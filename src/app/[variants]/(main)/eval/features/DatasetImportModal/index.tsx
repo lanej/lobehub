@@ -9,8 +9,7 @@ import { agentEvalService } from '@/services/agentEval';
 import { uploadService } from '@/services/upload';
 
 import { getPresetById } from '../../config/datasetPresets';
-import MappingStep, { autoInferMapping,type FieldMappingValue } from './MappingStep';
-import PreviewStep from './PreviewStep';
+import MappingStep, { autoInferMapping, type FieldMappingValue } from './MappingStep';
 import UploadStep from './UploadStep';
 
 type MappingTarget =
@@ -146,13 +145,17 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
         const result = await agentEvalService.importDataset({
           datasetId,
           pathname,
-          input: fieldMapping.input,
-          expected: fieldMapping.expected,
-          expectedDelimiter: fieldMapping.expectedDelimiter,
-          choices: fieldMapping.choices,
-          context: fieldMapping.context,
-          sortOrder: fieldMapping.sortOrder,
-          metadata: fieldMapping.metadata ? JSON.stringify(fieldMapping.metadata) : undefined,
+          filename,
+          format,
+          fieldMapping: {
+            input: fieldMapping.input,
+            expected: fieldMapping.expected,
+            expectedDelimiter: fieldMapping.expectedDelimiter,
+            choices: fieldMapping.choices,
+            context: fieldMapping.context,
+            sortOrder: fieldMapping.sortOrder,
+            metadata: fieldMapping.metadata,
+          },
         });
         message.success(t('dataset.import.success', { count: result.count }));
         handleClose();
@@ -176,31 +179,24 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
 
     const hasInputMapping = Object.values(mapping).includes('input');
 
-    const fieldMapping = buildFieldMapping();
-
-    const okText =
-      step === 0 ? undefined : step === 1 ? t('dataset.import.next') : t('dataset.import.confirm');
-
-    const onOk = step === 0 ? undefined : step === 1 ? () => setStep(2) : handleImport;
-
     return (
       <Modal
         allowFullscreen
         centered
         destroyOnHidden
-        cancelText={step > 0 ? t('dataset.import.prev') : undefined}
+        cancelText={step === 1 ? t('dataset.import.prev') : undefined}
         footer={step === 0 ? null : undefined}
-        okText={okText}
+        okText={step === 1 ? t('dataset.import.confirm') : undefined}
         open={open}
+        styles={step === 1 ? { body: { height: '99vh', overflow: 'auto' } } : undefined}
         title={t('dataset.import.title')}
         width={step === 0 ? 720 : '98vw'}
         okButtonProps={{
-          disabled: step === 1 && !hasInputMapping,
+          disabled: !hasInputMapping,
           loading: importing,
         }}
-        onCancel={step > 0 ? () => setStep(step - 1) : handleClose}
-        onOk={onOk}
-        styles={step > 0 ? { body: { height: '99vh', overflow: 'auto' } } : undefined}
+        onCancel={step === 1 ? () => setStep(0) : handleClose}
+        onOk={step === 1 ? handleImport : undefined}
       >
         <div style={{ paddingBlock: 16 }}>
           {step === 0 && (
@@ -217,10 +213,6 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
               onDelimiterChange={setDelimiter}
               onMappingChange={setMapping}
             />
-          )}
-
-          {step === 2 && fieldMapping && (
-            <PreviewStep fieldMapping={fieldMapping} preview={preview} totalCount={totalCount} />
           )}
         </div>
       </Modal>

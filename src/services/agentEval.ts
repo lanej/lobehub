@@ -55,11 +55,7 @@ class AgentEvalService {
     return lambdaClient.agentEval.createDataset.mutate(params);
   }
 
-  async updateDataset(params: {
-    description?: string;
-    id: string;
-    name: string;
-  }) {
+  async updateDataset(params: { description?: string; id: string; name: string }) {
     return lambdaClient.agentEval.updateDataset.mutate(params);
   }
 
@@ -72,25 +68,25 @@ class AgentEvalService {
   }
 
   async importDataset(params: {
-    choices?: string;
-    context?: string;
     datasetId: string;
-    expected?: string;
-    expectedDelimiter?: string;
-    input: string;
-    metadata?: string;
     pathname: string;
-    sortOrder?: string;
+    filename?: string;
+    format?: 'json' | 'jsonl' | 'csv' | 'xlsx';
+    fieldMapping: {
+      input: string;
+      expected?: string;
+      expectedDelimiter?: string;
+      choices?: string;
+      context?: string;
+      metadata?: Record<string, string>;
+      sortOrder?: string;
+    };
   }) {
     return lambdaClient.agentEval.importDataset.mutate(params);
   }
 
   // ============ Test Case ============
-  async listTestCases(params: {
-    datasetId: string;
-    limit?: number;
-    offset?: number;
-  }) {
+  async listTestCases(params: { datasetId: string; limit?: number; offset?: number }) {
     return lambdaClient.agentEval.listTestCases.query(params);
   }
 
