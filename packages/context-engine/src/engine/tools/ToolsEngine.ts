@@ -250,13 +250,18 @@ export class ToolsEngine {
   private convertManifestsToTools(manifests: LobeToolManifest[]): UniformTool[] {
     log('Converting %d manifests to tools', manifests.length);
 
-    // Use simplified conversion logic to avoid external package dependencies
+    // Use simplified conversion logic to avoid external package dependencies.
+    // Normalize parameters schema: ensure `properties` key is always present.
+    // Some LLM providers (Vertex AI Anthropic via LiteLLM) malform tool call
+    // arguments when a tool schema has no `properties` field.
     const tools = manifests.flatMap((manifest) =>
       manifest.api.map((api) => ({
         function: {
           description: api.description,
           name: this.generateToolName(manifest.identifier, api.name, manifest.type),
-          parameters: api.parameters,
+          parameters: api.parameters
+            ? { ...api.parameters, properties: api.parameters.properties ?? {} }
+            : api.parameters,
         },
         type: 'function' as const,
       })),
