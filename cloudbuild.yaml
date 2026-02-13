@@ -1,17 +1,17 @@
+substitutions:
+  _IMAGE_TAG: 'latest'
+
 steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:latest'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:${SHORT_SHA}'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:${_IMAGE_TAG}'
       - '.'
     timeout: '3600s'  # 1 hour timeout for large build
 
 images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:latest'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:${SHORT_SHA}'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/lobehub-custom/lobehub:${_IMAGE_TAG}'
 
 options:
   machineType: 'E2_HIGHCPU_8'
