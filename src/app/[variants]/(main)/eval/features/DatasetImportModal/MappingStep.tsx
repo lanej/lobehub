@@ -3,7 +3,7 @@
 import { Flexbox } from '@lobehub/ui';
 import { Checkbox, Input, Select, Table } from 'antd';
 import { cssVar } from 'antd-style';
-import { memo, useMemo, useState } from 'react';
+import { memo, type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { type DatasetPreset } from '../../config/datasetPresets';
@@ -151,7 +151,7 @@ const MappingStep = memo<MappingStepProps>(
 
     const roleDescColor = (role: MappingTarget) => ROLE_COLORS[role] || cssVar.colorTextTertiary;
 
-    const targetOptions: { label: React.ReactNode; value: MappingTarget }[] = [
+    const targetOptions: { label: ReactNode; value: MappingTarget }[] = [
       { desc: 'inputDesc', label: 'input', value: 'input' },
       { desc: 'expectedDesc', label: 'expected', value: 'expected' },
       { desc: 'choicesDesc', label: 'choices', value: 'choices' },
@@ -278,6 +278,7 @@ const MappingStep = memo<MappingStepProps>(
 
         {/* Data preview table */}
         <Table
+          bordered
           columns={columns}
           dataSource={preview.map((row, i) => ({ ...row, _key: i }))}
           pagination={false}

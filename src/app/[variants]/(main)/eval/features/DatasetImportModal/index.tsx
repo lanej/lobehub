@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { agentEvalService } from '@/services/agentEval';
 import { uploadService } from '@/services/upload';
+import { type FileUploadState } from '@/types/files/upload';
 
 import { getPresetById } from '../../config/datasetPresets';
 import MappingStep, { autoInferMapping, type FieldMappingValue } from './MappingStep';
@@ -37,6 +38,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     const [step, setStep] = useState(0);
     const [uploading, setUploading] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<FileUploadState>();
 
     // Upload result
     const [pathname, setPathname] = useState('');
@@ -58,6 +60,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
       setStep(0);
       setUploading(false);
       setImporting(false);
+      setUploadProgress(undefined);
       setPathname('');
       setFilename('');
       setHeaders([]);
@@ -76,10 +79,14 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
     const handleFileSelect = useCallback(
       async (file: File) => {
         setUploading(true);
+        setUploadProgress(undefined);
         try {
-          // 1. Upload to S3
+          // 1. Upload to S3 with progress tracking
           const metadata = await uploadService.uploadToServerS3(file, {
             directory: 'eval-datasets',
+            onProgress: (status, state) => {
+              setUploadProgress(state);
+            },
           });
 
           setPathname(metadata.path);
@@ -105,6 +112,7 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
           message.error(t('dataset.import.parseError'));
         } finally {
           setUploading(false);
+          setUploadProgress(undefined);
         }
       },
       [message, preset, t],
@@ -186,21 +194,34 @@ const DatasetImportModal = memo<DatasetImportModalProps>(
         destroyOnHidden
         cancelText={step === 1 ? t('dataset.import.prev') : undefined}
         footer={step === 0 ? null : undefined}
+        maskClosable={false}
         okText={step === 1 ? t('dataset.import.confirm') : undefined}
         open={open}
-        styles={step === 1 ? { body: { height: '99vh', overflow: 'auto' } } : undefined}
         title={t('dataset.import.title')}
         width={step === 0 ? 720 : '98vw'}
         okButtonProps={{
           disabled: !hasInputMapping,
           loading: importing,
         }}
+        styles={
+          step === 1
+            ? {
+                container: { height: '95vh', display: 'flex', flexDirection: 'column' },
+                body: { overflow: 'auto', maxHeight: 'unset', flex: 1 },
+              }
+            : undefined
+        }
         onCancel={step === 1 ? () => setStep(0) : handleClose}
         onOk={step === 1 ? handleImport : undefined}
       >
         <div style={{ paddingBlock: 16 }}>
           {step === 0 && (
-            <UploadStep loading={uploading} preset={preset} onFileSelect={handleFileSelect} />
+            <UploadStep
+              loading={uploading}
+              preset={preset}
+              uploadProgress={uploadProgress}
+              onFileSelect={handleFileSelect}
+            />
           )}
 
           {step === 1 && (
